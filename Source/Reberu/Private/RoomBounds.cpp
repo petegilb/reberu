@@ -22,8 +22,15 @@ void ARoomBounds::CreateNewDoor(){
 	CurrentlyEditingDoorId = NewDoor.DoorId;
 }
 
+void ARoomBounds::EditDoorAtIdx(){
+	const FReberuDoor& NewDoor = Doors.ReberuDoors[EditDoorIdx];
+	DoorSpawn = NewDoor.DoorTransform;
+	CurrentlyEditingDoorId = NewDoor.DoorId;
+}
+
 void ARoomBounds::StopEditingDoor(){
 	CurrentlyEditingDoorId = "";
+	DoorSpawn = FTransform();
 }
 
 void ARoomBounds::BeginPlay(){
@@ -56,5 +63,5 @@ void ARoomBounds::ManageDoor(){
 
 	if(!CurrentDoor) return;
 	
-	CurrentDoor->DoorTransform.SetLocation(DoorSpawn);
+	CurrentDoor->DoorTransform = DoorSpawn;
 }

@@ -13,7 +13,7 @@ struct FReberuDoor{
 	FReberuDoor(){
 		GenerateNewDoorId();
 		Weight = 0.f;
-		BoxExtent = FVector(20.f, 20.f, 100.f);
+		BoxExtent = FVector(20.f, 50.f, 100.f);
 	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -49,6 +49,14 @@ public:
 			return InItem.DoorId == InId;
 		});
 		return CurrentDoor;
+	}
+
+	int32 GetDoorIdxById(FString InId) const{
+		const int32 CurrentDoorIdx = ReberuDoors.IndexOfByPredicate([InId](const FReberuDoor& InItem)
+		{
+			return InItem.DoorId == InId;
+		});
+		return CurrentDoorIdx;
 	}
 	
 };
