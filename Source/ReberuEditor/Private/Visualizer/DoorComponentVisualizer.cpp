@@ -24,13 +24,13 @@ void FDoorComponentVisualizer::DrawVisualization(const UActorComponent* Componen
 		const FMatrix Matrix = DoorSpawnWorldTransform.ToMatrixWithScale();
 		DrawDirectionalArrow(PDI, Matrix, FLinearColor::Blue, 30.f, 10.f, SDPG_World, 1.f);
 	}
-	else if (const FReberuDoor* CurrentDoor = RoomBounds->Doors.GetDoorById(RoomBounds->CurrentlyEditingDoorId)){
-		CurrentDoorIdx = RoomBounds->Doors.GetDoorIdxById(RoomBounds->CurrentlyEditingDoorId);
+	else if (const FReberuDoor* CurrentDoor = RoomBounds->Room.GetDoorById(RoomBounds->CurrentlyEditingDoorId)){
+		CurrentDoorIdx = RoomBounds->Room.GetDoorIdxById(RoomBounds->CurrentlyEditingDoorId);
 		DrawDoor(View, PDI, DoorSpawnWorldTransform, CurrentDoor->BoxExtent, CurrentDoorIdx, FLinearColor::Yellow, FLinearColor::Red);
 	}
 
 	// Display all other doors
-	TArray<FReberuDoor> DoorsToDraw = RoomBounds->Doors.ReberuDoors;
+	TArray<FReberuDoor> DoorsToDraw = RoomBounds->Room.ReberuDoors;
 	int32 DoorIdx = 0;
 	for (FReberuDoor Door : DoorsToDraw){
 		if(CurrentDoorIdx == INDEX_NONE || DoorIdx != CurrentDoorIdx){

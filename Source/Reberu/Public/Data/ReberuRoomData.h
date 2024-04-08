@@ -36,10 +36,20 @@ struct FReberuDoor{
 };
 
 USTRUCT(BlueprintType, Blueprintable)
-struct FReberuDoorList{
+struct FReberuRoom{
 	GENERATED_BODY()
 
-public:
+	/** The Level to be associated with this room. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSoftObjectPtr<UWorld> Level = nullptr;
+
+	/** The location in world space of the box in the context of the current room. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FTransform BoxActorTransform;
+
+	/** The extent of the box collision necessary for checking for room overlaps. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FVector BoxExtent;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FReberuDoor> ReberuDoors;
@@ -75,21 +85,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The FName to be associated with this room."))
 	FName RoomName;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The Level to be associated with this room."))
-	TSoftObjectPtr<UWorld> Room = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The extent of the box collision necessary for checking for room overlaps."))
-	FVector BoxExtent;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The location in world space of the box in the context of the current room."))
-	FVector BoxLocation;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The doors associated with this room."))
-	FReberuDoorList RoomDoors;
-	
-
-protected:
-
-	
+	FReberuRoom Room;
 	
 };

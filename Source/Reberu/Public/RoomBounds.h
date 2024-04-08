@@ -27,7 +27,7 @@ public:
 	FTransform DoorSpawn;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FReberuDoorList Doors;
+	FReberuRoom Room;
 
 	/** for use in the editor. represents the door we are currently editing. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

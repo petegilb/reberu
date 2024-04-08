@@ -19,25 +19,26 @@ ARoomBounds::ARoomBounds(){
 
 void ARoomBounds::CreateNewDoor(){
 	const FReberuDoor NewDoor = FReberuDoor();
-	Doors.ReberuDoors.Add(NewDoor);
+	Room.ReberuDoors.Add(NewDoor);
 	CurrentlyEditingDoorId = NewDoor.DoorId;
 }
 
 void ARoomBounds::EditDoorAtIdx(){
-	const FReberuDoor& NewDoor = Doors.ReberuDoors[EditDoorIdx];
+	const FReberuDoor& NewDoor = Room.ReberuDoors[EditDoorIdx];
 	DoorSpawn = NewDoor.DoorTransform;
 	CurrentlyEditingDoorId = NewDoor.DoorId;
 }
 
 void ARoomBounds::StopEditingDoor(){
+	ManageDoor();
 	CurrentlyEditingDoorId = "";
 	DoorSpawn = FTransform();
 }
 
 void ARoomBounds::DelDoorAtIdx(){
-	if (!Doors.ReberuDoors.IsValidIndex(EditDoorIdx)) return;
+	if (!Room.ReberuDoors.IsValidIndex(EditDoorIdx)) return;
 
-	Doors.ReberuDoors.RemoveAt(EditDoorIdx);
+	Room.ReberuDoors.RemoveAt(EditDoorIdx);
 }
 
 void ARoomBounds::BeginPlay(){
@@ -110,7 +111,7 @@ void ARoomBounds::LockDoorGizmo(){
 }
 
 void ARoomBounds::ManageDoor(){
-	FReberuDoor* CurrentDoor = Doors.GetDoorById(CurrentlyEditingDoorId);
+	FReberuDoor* CurrentDoor = Room.GetDoorById(CurrentlyEditingDoorId);
 
 	if(!CurrentDoor) return;
 	
