@@ -11,6 +11,7 @@ struct FReberuDoor{
 	GENERATED_BODY()
 
 	FReberuDoor(){
+		DoorId = "";
 		GenerateNewDoorId();
 		Weight = 0.f;
 		BoxExtent = FVector(20.f, 50.f, 100.f);

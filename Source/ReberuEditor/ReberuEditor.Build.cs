@@ -23,6 +23,10 @@ public class ReberuEditor : ModuleRules
                 "UnrealEd",
                 "ComponentVisualizers",
                 "RenderCore",
+                "ToolMenus",
+                "UMG",
+                "UMGEditor",
+                "Blutility",
                 "Reberu"
             }
         );
