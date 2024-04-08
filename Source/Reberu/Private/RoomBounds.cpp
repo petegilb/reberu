@@ -3,6 +3,7 @@
 
 #include "RoomBounds.h"
 
+#include "Reberu.h"
 #include "Components/BoxComponent.h"
 
 
@@ -54,8 +55,52 @@ void ARoomBounds::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 }
 
 void ARoomBounds::LockDoorGizmo(){
+	const FBox Box = FBox( -RoomBox->GetScaledBoxExtent(), RoomBox->GetScaledBoxExtent() );
+	FVector Point = DoorSpawn.GetLocation();
+
+	/** If the gizmo is not inside the box. let's snap it back */
+	// if(Box.IsInsideOrOn(DoorSpawn.GetLocation())) return;
+
+	bool IsOnXWall = false;
+	bool IsOnYWall = false;
 	
-	
+
+	if (Point.X == Box.Min.X || Point.X == Box.Max.X){
+		IsOnXWall = true;
+	}
+	if (Point.Y == Box.Min.Y || Point.Y == Box.Max.Y){
+		IsOnYWall = true;
+	}
+
+	if(!IsOnXWall && !IsOnYWall){
+		Point.X = Box.Min.X;
+		Point.Y = Box.Min.Y;
+	}
+	else if (IsOnXWall){
+		const double MinDiff = abs(Point.X - Box.Min.X);
+		const double MaxDiff = abs(Point.X - Box.Max.X);
+		Point.X = MinDiff < MaxDiff ? Box.Min.X : Box.Max.X;
+
+		Point.Y = FMath::Clamp(Point.Y, Box.Min.Y, Box.Max.Y);
+	}
+	else if(IsOnYWall){
+		const double MinDiff = abs(Point.Y - Box.Min.Y);
+		const double MaxDiff = abs(Point.Y - Box.Max.Y);
+		Point.Y = MinDiff < MaxDiff ? Box.Min.Y : Box.Max.Y;
+
+		Point.X = FMath::Clamp(Point.X, Box.Min.X, Box.Max.X);
+	}
+
+	if (Point.Z < Box.Min.Z)
+	{
+		Point.Z = Box.Min.Z;
+	}
+	else if (Point.Z > Box.Max.Z)
+	{
+		Point.Z = Box.Max.Z;
+	}
+
+	DoorSpawn.SetLocation(Point);
 }
 
 void ARoomBounds::ManageDoor(){
