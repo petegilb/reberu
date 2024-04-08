@@ -37,7 +37,7 @@ public:
 	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
 	void CreateNewDoor();
 
-	/** Only exists to act as in input for EditDoorAtIdx. Don't use for any other purpose. */
+	/** Only exists to act as in input for EditDoorAtIdx and DelDoorAtIdx. Don't use for any other purpose. */
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category="DoorEditor")
 	int32 EditDoorIdx = 0;
 
@@ -47,6 +47,9 @@ public:
 	/** Stop editing current door and reset gizmo position. */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
 	void StopEditingDoor();
+	
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	void DelDoorAtIdx();
 
 protected:
 	virtual void BeginPlay() override;

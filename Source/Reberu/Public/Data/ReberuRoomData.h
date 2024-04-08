@@ -81,7 +81,7 @@ public:
 	FVector BoxExtent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The location in world space of the box in the context of the current room."))
-	FVector CollisionLocation;
+	FVector BoxLocation;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Reberu|Room", meta = (ToolTip = "The doors associated with this room."))
 	FReberuDoorList RoomDoors;

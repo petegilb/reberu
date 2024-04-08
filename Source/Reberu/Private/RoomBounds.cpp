@@ -34,6 +34,12 @@ void ARoomBounds::StopEditingDoor(){
 	DoorSpawn = FTransform();
 }
 
+void ARoomBounds::DelDoorAtIdx(){
+	if (!Doors.ReberuDoors.IsValidIndex(EditDoorIdx)) return;
+
+	Doors.ReberuDoors.RemoveAt(EditDoorIdx);
+}
+
 void ARoomBounds::BeginPlay(){
 	Super::BeginPlay();
 	
