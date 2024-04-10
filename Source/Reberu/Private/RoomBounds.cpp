@@ -66,11 +66,8 @@ void ARoomBounds::LockDoorGizmo(){
 	FVector Point = DoorSpawn.GetLocation();
 
 	/** If the gizmo is not inside the box. let's snap it back */
-	// if(Box.IsInsideOrOn(DoorSpawn.GetLocation())) return;
-
 	bool IsOnXWall = false;
 	bool IsOnYWall = false;
-	
 
 	if (Point.X == Box.Min.X || Point.X == Box.Max.X){
 		IsOnXWall = true;

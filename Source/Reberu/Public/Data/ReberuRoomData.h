@@ -6,6 +6,10 @@
 #include "Engine/DataAsset.h"
 #include "ReberuRoomData.generated.h"
 
+class UReberuRule;
+/**
+ * Represents a door in a room for Reberu generation.
+ */
 USTRUCT(BlueprintType, Blueprintable)
 struct FReberuDoor{
 	GENERATED_BODY()
@@ -35,6 +39,31 @@ struct FReberuDoor{
 	}
 };
 
+/**
+ * Represents a connection from one room to another.
+ * If a room has no transitions, a random room in the data asset will be picked.
+ */
+USTRUCT(BlueprintType, Blueprintable)
+struct FReberuTransition{
+	GENERATED_BODY()
+
+	/** The room that the owning room should transition to. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	class UReberuRoomData* ConnectedRoom;
+
+	/** Weight represents the likelihood that this transition will be chosen. Should be between 0-1 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float Weight;
+
+	/** Rules that specify whether or not this transition can be used. No rules == good to go. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TArray<TSubclassOf<UReberuRule>> Rules;
+};
+
+/**
+ * Represents a Room for Reberu level generation. This struct should be created using the editor tools.
+ * The final struct will live in a UReberuRoomData data asset but should be generated with a BP_RoomBounds.
+ */
 USTRUCT(BlueprintType, Blueprintable)
 struct FReberuRoom{
 	GENERATED_BODY()
@@ -50,9 +79,14 @@ struct FReberuRoom{
 	/** The extent of the box collision necessary for checking for room overlaps. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	FVector BoxExtent;
-	
+
+	/** The doors associated with this room. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FReberuDoor> ReberuDoors;
+
+	/** The rooms that we can transition to from this room. None means a random one will be chosen. */
+	UPROPERTY(EditDefaultsOnly)
+	TArray<FReberuTransition> Transitions;
 
 	FReberuDoor* GetDoorById(FString InId){
 		FReberuDoor* CurrentDoor = ReberuDoors.FindByPredicate([InId](const FReberuDoor& InItem)
