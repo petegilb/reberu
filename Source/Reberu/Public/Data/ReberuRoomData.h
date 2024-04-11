@@ -88,6 +88,10 @@ struct FReberuRoom{
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FReberuTransition> Transitions;
 
+	/** Set containing the used doors (key is their id). Used in generation. */
+	UPROPERTY()
+	TSet<FString> UsedDoors;
+
 	FReberuDoor* GetDoorById(FString InId){
 		FReberuDoor* CurrentDoor = ReberuDoors.FindByPredicate([InId](const FReberuDoor& InItem)
 		{

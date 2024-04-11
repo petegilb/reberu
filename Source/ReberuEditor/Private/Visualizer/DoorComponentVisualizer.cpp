@@ -26,7 +26,7 @@ void FDoorComponentVisualizer::DrawVisualization(const UActorComponent* Componen
 	}
 	else if (const FReberuDoor* CurrentDoor = RoomBounds->Room.GetDoorById(RoomBounds->CurrentlyEditingDoorId)){
 		CurrentDoorIdx = RoomBounds->Room.GetDoorIdxById(RoomBounds->CurrentlyEditingDoorId);
-		DrawDoor(View, PDI, DoorSpawnWorldTransform, CurrentDoor->BoxExtent, CurrentDoorIdx, FLinearColor::Yellow, FLinearColor::Red);
+		DrawDoor(View, PDI, DoorSpawnWorldTransform, CurrentDoor->BoxExtent, CurrentDoorIdx, CurrentDoor->DoorId, FLinearColor::Yellow, FLinearColor::Red);
 	}
 
 	// Display all other doors
@@ -34,14 +34,14 @@ void FDoorComponentVisualizer::DrawVisualization(const UActorComponent* Componen
 	int32 DoorIdx = 0;
 	for (FReberuDoor Door : DoorsToDraw){
 		if(CurrentDoorIdx == INDEX_NONE || DoorIdx != CurrentDoorIdx){
-			DrawDoor(View, PDI, Door.DoorTransform * RoomBoundsTransform, Door.BoxExtent, DoorIdx, FLinearColor::Green, FLinearColor::Red);
+			DrawDoor(View, PDI, Door.DoorTransform * RoomBoundsTransform, Door.BoxExtent, DoorIdx, Door.DoorId, FLinearColor::Green, FLinearColor::Red);
 		}
 		DoorIdx++;
 	}
 }
 
 void FDoorComponentVisualizer::DrawDoor(const FSceneView* View, FPrimitiveDrawInterface* PDI, const FTransform& DoorWorldTransform, const FVector& DoorExtent,
-	const int32 DoorIndex, const FLinearColor Color, FLinearColor TextColor)
+	const int32 DoorIndex, const FString& DoorId, const FLinearColor Color, FLinearColor TextColor)
 {
 	const FMatrix Matrix = DoorWorldTransform.ToMatrixWithScale();
 
@@ -50,9 +50,10 @@ void FDoorComponentVisualizer::DrawDoor(const FSceneView* View, FPrimitiveDrawIn
 	// display an AABB using the origin/extent method
 	DrawWireBox(PDI, Matrix, FBox::BuildAABB(FVector(), DoorExtent), Color, SDPG_World, 3.f);
 
-	FString WorldString = "Door Idx: ";
+	FString WorldString = TEXT("Door Idx: ");
 	WorldString += FString::FromInt(DoorIndex);
-	DrawWorldText(DoorWorldTransform.GetLocation() + FVector(0.f, 0.f, 20.f), View, WorldString, TextColor);
+	WorldString += FString::Printf(TEXT("\n %s"), *DoorId);
+	DrawWorldText(DoorWorldTransform.GetLocation() + FVector(0.f, 0.f, 40.f), View, WorldString, TextColor);
 }
 
 void FDoorComponentVisualizer::DrawWorldText(const FVector& InWorldLocation, const FSceneView* InView, const FString& InString, FLinearColor Color){
