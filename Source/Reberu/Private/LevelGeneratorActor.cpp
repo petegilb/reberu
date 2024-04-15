@@ -114,16 +114,23 @@ void ALevelGeneratorActor::DespawnRoom(ULevelStreamingDynamic* SpawnedRoom){
 FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor){
 
 	FTransform CalculatedTransform = FTransform::Identity;
+
+	// We also alter the door location by the extent of the door
 	
 	// Get the location of the last room chosen door in world space
 	FTransform LastRoomTransform = CurrentRoomBounds->GetActorTransform();
+	FVector RotatedFromDoorExtent = UKismetMathLibrary::Quat_RotateVector(
+		CurrentRoomChosenDoor.DoorTransform.GetRotation(),
+		FVector(CurrentRoomChosenDoor.BoxExtent.X, 0.f, -CurrentRoomChosenDoor.BoxExtent.Z));
+	CurrentRoomChosenDoor.DoorTransform.SetLocation(CurrentRoomChosenDoor.DoorTransform.GetLocation() + RotatedFromDoorExtent);
 	FTransform LastRoomDoorTransform = CurrentRoomChosenDoor.DoorTransform * LastRoomTransform;
 
 	// Get the location of the next room chosen door in world space
 	FTransform NextRoomTransform = NextRoom->Room.BoxActorTransform;
-	
-	// https://forums.unrealengine.com/t/how-to-get-an-angle-between-2-vectors/280850/39
 
+	// Calculate Rotation
+	// https://forums.unrealengine.com/t/how-to-get-an-angle-between-2-vectors/280850/39
+	
 	FVector FromDoorForwardVector = CurrentRoomBounds->GetActorForwardVector();
 	FromDoorForwardVector = UKismetMathLibrary::Quat_RotateVector(CurrentRoomChosenDoor.DoorTransform.GetRotation(), FromDoorForwardVector);
 	
@@ -152,11 +159,19 @@ FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* Current
 	REBERU_LOG_ARGS(Warning, "angle diff of %f, rotating by %s", AngleInDegrees, *ToRotateBy.ToString())
 	
 	CalculatedTransform.SetRotation(UKismetMathLibrary::ComposeRotators(NextRoomTransform.Rotator(), ToRotateBy).Quaternion());
+
+	// Calculate Location
 	
 	CalculatedTransform.SetLocation(LastRoomDoorTransform.GetLocation());
-	FVector FinalLocation = CalculatedTransform.TransformPosition(NextRoomChosenDoor.DoorTransform.GetLocation());
+	FVector RotatedToDoorExtent = UKismetMathLibrary::Quat_RotateVector(
+		NextRoomChosenDoor.DoorTransform.GetRotation(),
+		FVector(NextRoomChosenDoor.BoxExtent.X, 0.f, -NextRoomChosenDoor.BoxExtent.Z));
+
+	FVector NextRoomChosenDoorAltered = NextRoomChosenDoor.DoorTransform.GetLocation() + RotatedToDoorExtent;
+	
+	FVector FinalLocation = CalculatedTransform.TransformPosition(NextRoomChosenDoorAltered);
 	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Yellow, 25, 1);
-	FinalLocation = CalculatedTransform.GetLocation() + (CalculatedTransform.GetLocation() - FinalLocation);
+	FinalLocation = LastRoomDoorTransform.GetLocation() + (LastRoomDoorTransform.GetLocation() - FinalLocation);
 	CalculatedTransform.SetLocation(FinalLocation);
 	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Red, 25, 1);
 	return CalculatedTransform;
@@ -304,8 +319,6 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& Fro
 		OverlappingActors.Add(Overlap.GetActor());
 	}
 	
-	// NewRoomBounds->RoomBox->GetOverlappingActors(OverlappingActors);
-
 	REBERU_LOG_ARGS(Log, "Number of overlapping actors for %s is: %d", *NewRoomBounds->GetName(), OverlappingActors.Num())
 
 	for (AActor* OverlappedActor : OverlappingActors){
@@ -313,16 +326,13 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& Fro
 	}
 
 	// if we are good, return true, else return the result of a recursive call and delete the bounds
-	NewMove.ToRoomBounds = NewRoomBounds;
-	return true;
-	if(true){
-		MovesList.AddTail(NewMove);
-		//todo also add to used doors on the FReberuRoom on the roombounds 
+	if(OverlappingActors.Num() == 0){
+		NewMove.ToRoomBounds = NewRoomBounds;
 		return true;
 	}
-	else{
-		return PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
-	}
+	
+	NewRoomBounds->Destroy();
+	return PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
 }
 
 void ALevelGeneratorActor::StartGeneration(){

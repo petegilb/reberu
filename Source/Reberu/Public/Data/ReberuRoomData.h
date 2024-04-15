@@ -18,7 +18,7 @@ struct FReberuDoor{
 		DoorId = "";
 		GenerateNewDoorId();
 		Weight = 0.f;
-		BoxExtent = FVector(20.f, 50.f, 100.f);
+		BoxExtent = FVector(5.f, 50.f, 100.f);
 	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
