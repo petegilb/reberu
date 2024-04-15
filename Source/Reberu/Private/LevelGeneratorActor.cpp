@@ -135,20 +135,32 @@ FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* Current
 	REBERU_LOG_ARGS(Warning, "from door rot %s, to door rot %s", *CurrentRoomChosenDoor.DoorTransform.GetRotation().Rotator().ToString(), *NextRoomChosenDoor.DoorTransform.GetRotation().Rotator().ToString())
 	
 	REBERU_LOG_ARGS(Warning, "forward vector 1 %s, forward vector 2 %s", *FromDoorForwardVector.ToString(), *ToDoorForwardVector.ToString())
+	
+	float DotProduct = FromDoorForwardVector.GetSafeNormal().Dot(ToDoorForwardVector.GetSafeNormal());
+	float DegreeDifference = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+	REBERU_LOG_ARGS(Warning, "Dot Product %f, Degree Difference %f", DotProduct, DegreeDifference)
+	float AngleInDegrees = FMath::UnwindDegrees(180 - DegreeDifference);
 
-	float AngleInDegrees = FMath::UnwindDegrees(180 + FMath::RadiansToDegrees(FMath::Acos(FromDoorForwardVector.GetSafeNormal().Dot(ToDoorForwardVector.GetSafeNormal()))));
+	FVector CrossProduct = FVector::CrossProduct(FromDoorForwardVector.GetSafeNormal(), ToDoorForwardVector.GetSafeNormal());
+
+	// If the Z component of the cross product is less than zero, the second vector is to the left of the first
+	if (CrossProduct.Z < 0)
+	{
+		AngleInDegrees = -AngleInDegrees;
+	}
+	
 	FRotator ToRotateBy = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector(0.f, 0.f, 1.f), AngleInDegrees);
 
 	REBERU_LOG_ARGS(Warning, "angle diff of %f, rotating by %s", AngleInDegrees, *ToRotateBy.ToString())
 	
-	CalculatedTransform.SetRotation(UKismetMathLibrary::ComposeRotators(ToRotateBy, NextRoomTransform.Rotator()).Quaternion());
+	CalculatedTransform.SetRotation(UKismetMathLibrary::ComposeRotators(NextRoomTransform.Rotator(), ToRotateBy).Quaternion());
 	
 	CalculatedTransform.SetLocation(LastRoomDoorTransform.GetLocation());
 	FVector FinalLocation = CalculatedTransform.TransformPosition(NextRoomChosenDoor.DoorTransform.GetLocation());
-	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 12, FLinearColor::Yellow, 25, 2);
+	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Yellow, 25, 1);
 	FinalLocation = CalculatedTransform.GetLocation() + (CalculatedTransform.GetLocation() - FinalLocation);
 	CalculatedTransform.SetLocation(FinalLocation);
-	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 12, FLinearColor::Red, 25, 2);
+	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Red, 25, 1);
 	return CalculatedTransform;
 }
 
