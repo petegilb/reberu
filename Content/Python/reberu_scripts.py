@@ -29,16 +29,20 @@ def get_reberu_settings(key):
 
 def create_room_data(room_bounds : unreal.RoomBounds, room_name):
     """
-    Creates a room data asset.
+    Creates a room data asset or updates the fields on the existing asset if it already exists.
     :param room_bounds: an instance of BP_RoomBounds that contains our room info
     :param room_name: the name of the room to create
     """
     content_path = get_reberu_settings('ReberuPath') if get_reberu_settings('ReberuPath') else REBERU_CONTENT_PATH
-    print(f'Creating Reberu Room asset with name {room_name} at {content_path}')
-    does_asset_exist = EAS.does_asset_exist(f"{content_path}/Rooms/DA_{room_name}")
+    asset_path = f"{content_path}/Rooms/DA_{room_name}"
+    print(f'Creating Reberu Room asset with name {room_name} at {asset_path}')
+    does_asset_exist = EAS.does_asset_exist(asset_path)
     if(does_asset_exist):
-        unreal.log_warning(f'Asset already exists at: {content_path}/Rooms/DA_{room_name}.')
-    new_da : unreal.ReberuRoomData = ASSET_TOOLS.create_asset(f'DA_{room_name}', f'{content_path}/Rooms', unreal.ReberuRoomData, DA_FACTORY)
+        unreal.log_warning(f'Asset already exists at: {asset_path}.')
+        new_da : unreal.ReberuRoomData = EAS.load_asset(asset_path)
+        EAS.checkout_loaded_asset(new_da)
+    else:
+        new_da : unreal.ReberuRoomData = ASSET_TOOLS.create_asset(f'DA_{room_name}', f'{content_path}/Rooms', unreal.ReberuRoomData, DA_FACTORY)
     if not new_da:
         unreal.log_error(f'Failed to create new data asset at path {content_path}/Rooms/DA_{room_name}')
         return False
