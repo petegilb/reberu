@@ -12,6 +12,7 @@ ARoomBounds::ARoomBounds(){
 
 	RoomBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RoomBox"));
 	SetRootComponent(RoomBox);
+	RoomBox->SetCollisionObjectType(ECC_WorldStatic);
 	RoomBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	RoomBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	RoomBox->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);

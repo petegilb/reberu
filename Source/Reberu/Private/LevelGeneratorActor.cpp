@@ -114,8 +114,6 @@ void ALevelGeneratorActor::DespawnRoom(ULevelStreamingDynamic* SpawnedRoom){
 FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor){
 
 	FTransform CalculatedTransform = FTransform::Identity;
-
-	//https://forums.unrealengine.com/t/how-to-rotate-around-an-arbitrary-point/283132/5
 	
 	// Get the location of the last room chosen door in world space
 	FTransform LastRoomTransform = CurrentRoomBounds->GetActorTransform();
@@ -124,7 +122,7 @@ FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* Current
 	// Get the location of the next room chosen door in world space
 	FTransform NextRoomTransform = NextRoom->Room.BoxActorTransform;
 	
-	// https://forums.unrealengine.com/t/how-to-get-an-angle-between-2-vectors/280850/40
+	// https://forums.unrealengine.com/t/how-to-get-an-angle-between-2-vectors/280850/39
 
 	FVector FromDoorForwardVector = CurrentRoomBounds->GetActorForwardVector();
 	FromDoorForwardVector = UKismetMathLibrary::Quat_RotateVector(CurrentRoomChosenDoor.DoorTransform.GetRotation(), FromDoorForwardVector);
@@ -287,6 +285,32 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& Fro
 	REBERU_LOG_ARGS(Log, "Spawned in New room bounds, %s, which is connected to: %s", *NewRoomBounds->GetName(), *FromRoomBounds->GetName())
 	
 	// Check collision
+	UWorld* World = GetWorld();
+	if(!World) return false;
+	
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_WorldStatic);
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(NewRoomBounds);
+
+	TArray<FOverlapResult> Overlaps;
+	
+	TSet<AActor*> OverlappingActors;
+	
+	World->OverlapMultiByObjectType(Overlaps, NewRoomBounds->GetActorLocation(), FQuat::Identity, ObjectParams, FCollisionShape::MakeBox(NewRoomBounds->RoomBox->GetScaledBoxExtent()), Params);
+
+	for (FOverlapResult& Overlap : Overlaps){
+		OverlappingActors.Add(Overlap.GetActor());
+	}
+	
+	// NewRoomBounds->RoomBox->GetOverlappingActors(OverlappingActors);
+
+	REBERU_LOG_ARGS(Log, "Number of overlapping actors for %s is: %d", *NewRoomBounds->GetName(), OverlappingActors.Num())
+
+	for (AActor* OverlappedActor : OverlappingActors){
+		REBERU_LOG_ARGS(Log, "Found overlapping Actor on %s : %s", *NewRoomBounds->GetName(), *OverlappedActor->GetName())
+	}
 
 	// if we are good, return true, else return the result of a recursive call and delete the bounds
 	NewMove.ToRoomBounds = NewRoomBounds;
