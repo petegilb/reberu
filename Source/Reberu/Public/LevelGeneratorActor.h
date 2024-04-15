@@ -20,22 +20,9 @@ class UReberuData;
  */
 struct FReberuMove{
 
-	// FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform){
-	// 	RoomData = InRoomData;
-	// 	SpawnedTransform = InTransform;
-	// }
-	//
-	// FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, FGuid InId){
-	// 	RoomData = InRoomData;
-	// 	SpawnedTransform = InTransform;
-	// 	SpawnedRoomId = InId;
-	// }
-	//
-	// UPROPERTY()
-	// FGuid SpawnedRoomId;
-
-	FReberuMove();
-	// FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, )
+	FReberuMove(){
+		
+	}
 
 	FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform){
 		RoomData = InRoomData;
@@ -47,6 +34,18 @@ struct FReberuMove{
 		SpawnedTransform = InTransform;
 		ToRoomBounds = InToRoomBounds;
 		CanRevertMove = InCanRevertMove;
+	}
+
+	FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, ARoomBounds* InToRoomBounds, bool InCanRevertMove, ARoomBounds* InFromRoomBounds,
+		FString InFromRoomDoor, FString InToRoomDoor)
+	{
+		RoomData = InRoomData;
+		SpawnedTransform = InTransform;
+		ToRoomBounds = InToRoomBounds;
+		CanRevertMove = InCanRevertMove;
+		FromRoomBounds = InFromRoomBounds;
+		FromRoomDoor = InFromRoomDoor;
+		ToRoomDoor = InToRoomDoor;
 	}
 
 	/** Reference to the room data associated with this move. */
@@ -100,7 +99,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Reberu")
 	int32 ReberuSeed = -1;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Reberu")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Reberu")
 	FRandomStream ReberuRandomStream;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
@@ -114,26 +113,11 @@ protected:
 	
 	TDoubleLinkedList<FReberuMove> MovesList;
 
-	// UPROPERTY()
-	// TMap<FReberuMove*, FReberuRoom*> ;
-
 	/** Does some prechecks before generation starts to see if we can even start generation. */
 	bool CanStartGeneration() const;
 
 	/** Do logic to place next room and retry accordingly. */
-	void PlaceNextRoom();
-
-	/** Chooses the next door to use during level generation. */
-	TOptional<FReberuDoor> ChooseRoomDoor(const UReberuRoomData* InRoom) const;
-
-	/** Chooses the next room during level generation. */
-	UReberuRoomData* ChooseNextRoom() const;
-
-	/** Retrieves a random door from the provided room. */
-	TOptional<FReberuDoor> GetRandomDoor(const UReberuRoomData* InRoom) const;
-
-	/** Retrieves a random room from reberu data */
-	UReberuRoomData* GetRandomRoom() const;
+	bool PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors);
 
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform);
@@ -147,3 +131,15 @@ protected:
 	/** Spawn in a room bounds instance using the specified size from the room data. */
 	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
 };
+
+/** Helper function to get a random object in an array using our random stream. */
+template<typename T>
+static T& GetRandomObjectInArray(TArray<T>& InArray, FRandomStream& InRandomStream){
+	return InArray[InRandomStream.RandRange(0, InArray.Num() - 1)];
+}
+
+/** Helper function to get a random object in a set using our random stream. */
+template<typename T>
+static T& GetRandomObjectInSet(TSet<T>& InSet, FRandomStream& InRandomStream){
+	return InSet[InRandomStream.RandRange(0, InSet.Num() - 1)];
+}
