@@ -2,12 +2,9 @@
 
 #include "EditorUtilitySubsystem.h"
 #include "EditorUtilityWidgetBlueprint.h"
-#include "ISettingsContainer.h"
-#include "ISettingsModule.h"
 #include "UnrealEdGlobals.h"
 #include "Component/DoorVisualizerComponent.h"
 #include "Editor/UnrealEdEngine.h"
-#include "Settings/ReberuSettings.h"
 #include "Visualizer/DoorComponentVisualizer.h"
 
 DEFINE_LOG_CATEGORY(LogReberuEditor)
@@ -21,18 +18,6 @@ void FReberuEditorModule::StartupModule()
 		const TSharedPtr<FDoorComponentVisualizer> Visualizer = MakeShareable(new FDoorComponentVisualizer());
 		GUnrealEd->RegisterComponentVisualizer(UDoorVisualizerComponent::StaticClass()->GetFName(), Visualizer);
 		Visualizer->OnRegister();
-
-		if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
-		{
-			const TSharedPtr<ISettingsContainer> ProjectSettingsContainer = SettingsModule->GetContainer("Project");
-			ProjectSettingsContainer->DescribeCategory("ReberuCategory", FText::FromString("Reberu"), FText::FromString("Reberu Settings"));
-
-			SettingsModule->RegisterSettings("Project", "ReberuCategory", "ReberuSettings",
-				FText::FromString("Reberu Settings"),
-				FText::FromString("Configure Reberu Settings"),
-				GetMutableDefault<UReberuSettings>()
-			);
-		}
 	}
 
 	// Register a function to be called when menu system is initialized

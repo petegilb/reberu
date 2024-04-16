@@ -3,29 +3,13 @@ import configparser
 import os
 
 REBERU_CONTENT_FULL_PATH = f'{unreal.Paths.project_content_dir()}Reberu'
-REBERU_CONTENT_PATH = '/Game/Reberu'
-REBERU_SETTINGS_PATH = 'DefaultEditorUserSettings.ini'
+REBERU_SETTINGS : unreal.ReberuSettings = unreal.ReberuSettings.get_default_object()
 EAL = unreal.EditorAssetLibrary
 ELL = unreal.EditorLevelLibrary
 EAS = unreal.get_editor_subsystem(unreal.EditorAssetSubsystem)
 ASSET_TOOLS = unreal.AssetToolsHelpers.get_asset_tools()
 DA_FACTORY = unreal.DataAssetFactory()
 
-def get_reberu_settings(key):
-    """
-    Attempts to get the reberu ini settings.
-    :param key: key in the settings to grab
-    """
-    try:
-        proj_dir  = unreal.Paths.project_dir()
-        engine_config = os.path.join(proj_dir, 'Config', REBERU_SETTINGS_PATH)
-        config = configparser.ConfigParser()
-        config.read(engine_config)
-        return config.get('/Script/ReberuEditor.ReberuSettings', key)
-    except configparser.Error:
-        return None
-    except:
-        return None
 
 def create_room_data(room_bounds : unreal.RoomBounds, room_name):
     """
@@ -33,7 +17,7 @@ def create_room_data(room_bounds : unreal.RoomBounds, room_name):
     :param room_bounds: an instance of BP_RoomBounds that contains our room info
     :param room_name: the name of the room to create
     """
-    content_path = get_reberu_settings('ReberuPath') if get_reberu_settings('ReberuPath') else REBERU_CONTENT_PATH
+    content_path = REBERU_SETTINGS.get_editor_property('reberu_path')
     asset_path = f"{content_path}/Rooms/DA_{room_name}"
     print(f'Creating Reberu Room asset with name {room_name} at {asset_path}')
     does_asset_exist = EAS.does_asset_exist(asset_path)

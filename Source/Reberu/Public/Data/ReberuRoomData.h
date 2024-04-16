@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Settings/ReberuSettings.h"
 #include "ReberuRoomData.generated.h"
 
 class UReberuRule;
@@ -18,7 +19,8 @@ struct FReberuDoor{
 		DoorId = "";
 		GenerateNewDoorId();
 		Weight = 0.f;
-		BoxExtent = FVector(5.f, 50.f, 100.f);
+		const UReberuSettings* ReberuSettings = GetDefault<UReberuSettings>();
+		BoxExtent = ReberuSettings->DefaultDoorExtent;
 	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
