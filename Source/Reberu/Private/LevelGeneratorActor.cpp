@@ -137,13 +137,13 @@ FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* Current
 	FVector ToDoorForwardVector = NextRoom->Room.BoxActorTransform.GetUnitAxis( EAxis::X );
 	ToDoorForwardVector = UKismetMathLibrary::Quat_RotateVector(NextRoomChosenDoor.DoorTransform.GetRotation(), ToDoorForwardVector);
 
-	REBERU_LOG_ARGS(Warning, "from door rot %s, to door rot %s", *CurrentRoomChosenDoor.DoorTransform.GetRotation().Rotator().ToString(), *NextRoomChosenDoor.DoorTransform.GetRotation().Rotator().ToString())
+	REBERU_LOG_ARGS(Verbose, "from door rot %s, to door rot %s", *CurrentRoomChosenDoor.DoorTransform.GetRotation().Rotator().ToString(), *NextRoomChosenDoor.DoorTransform.GetRotation().Rotator().ToString())
 	
-	REBERU_LOG_ARGS(Warning, "forward vector 1 %s, forward vector 2 %s", *FromDoorForwardVector.ToString(), *ToDoorForwardVector.ToString())
+	REBERU_LOG_ARGS(Verbose, "forward vector 1 %s, forward vector 2 %s", *FromDoorForwardVector.ToString(), *ToDoorForwardVector.ToString())
 	
 	float DotProduct = FromDoorForwardVector.GetSafeNormal().Dot(ToDoorForwardVector.GetSafeNormal());
 	float DegreeDifference = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
-	REBERU_LOG_ARGS(Warning, "Dot Product %f, Degree Difference %f", DotProduct, DegreeDifference)
+	REBERU_LOG_ARGS(Verbose, "Dot Product %f, Degree Difference %f", DotProduct, DegreeDifference)
 	float AngleInDegrees = FMath::UnwindDegrees(180 - DegreeDifference);
 
 	FVector CrossProduct = FVector::CrossProduct(FromDoorForwardVector.GetSafeNormal(), ToDoorForwardVector.GetSafeNormal());
@@ -156,7 +156,7 @@ FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* Current
 	
 	FRotator ToRotateBy = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector(0.f, 0.f, 1.f), AngleInDegrees);
 
-	REBERU_LOG_ARGS(Warning, "angle diff of %f, rotating by %s", AngleInDegrees, *ToRotateBy.ToString())
+	REBERU_LOG_ARGS(Verbose, "angle diff of %f, rotating by %s", AngleInDegrees, *ToRotateBy.ToString())
 	
 	CalculatedTransform.SetRotation(UKismetMathLibrary::ComposeRotators(NextRoomTransform.Rotator(), ToRotateBy).Quaternion());
 
@@ -170,10 +170,10 @@ FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* Current
 	FVector NextRoomChosenDoorAltered = NextRoomChosenDoor.DoorTransform.GetLocation() + RotatedToDoorExtent;
 	
 	FVector FinalLocation = CalculatedTransform.TransformPosition(NextRoomChosenDoorAltered);
-	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Yellow, 25, 1);
+	// UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Yellow, 25, 1);
 	FinalLocation = LastRoomDoorTransform.GetLocation() + (LastRoomDoorTransform.GetLocation() - FinalLocation);
 	CalculatedTransform.SetLocation(FinalLocation);
-	UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Red, 25, 1);
+	// UKismetSystemLibrary::DrawDebugSphere(this, FinalLocation, 10, 6, FLinearColor::Red, 25, 1);
 	return CalculatedTransform;
 }
 
@@ -191,9 +191,68 @@ ARoomBounds* ALevelGeneratorActor::SpawnRoomBounds(const UReberuRoomData* InRoom
 	return SpawnedBounds;
 }
 
-bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors,
-	TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors)
+bool ALevelGeneratorActor::ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError){
+	// TODO implement other selection types
+
+	const ARoomBounds* FromRoomBounds = SourceRoomNode->GetValue().ToRoomBounds;
+	
+	switch(SelectionType){
+	case ERoomSelection::Breadth:
+		// If we've used all doors on our current bounds, let's move to the next room
+		// Place all that we can on the most recent room
+		if(FromRoomBounds->Room.UsedDoors.Num() == FromRoomBounds->Room.ReberuDoors.Num() || bFromError){
+			while(SourceRoomNode != MovesList.GetTail() && (SourceRoomNode->GetValue().ToRoomBounds == FromRoomBounds || SourceRoomNode->GetValue().ToRoomBounds == nullptr)){
+				SourceRoomNode = SourceRoomNode->GetNextNode();
+				REBERU_LOG(Warning, "Iterated here!")
+			}
+			// if the new room bounds is a different value compared to the initial version
+			if(SourceRoomNode->GetValue().FromRoomBounds != FromRoomBounds){
+				REBERU_LOG(Log, "Selected new room!")
+				return true;
+			}
+			return false;
+		}
+		else{
+			// if we made it here that means there are still unused rooms on our current source room
+			REBERU_LOG(Log, "Kept going with the same room!")
+			return true;
+		}
+		break;
+	default: ;
+	}
+	
+	
+	return false;
+}
+
+bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedNewRooms){
+	REBERU_LOG(Log, "Trying to backtrack source room...")
+	if(MovesList.Num() <= 1) return false;
+	
+	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* CurrentTail = MovesList.GetTail();
+
+	switch(BacktrackMethod){
+	case ERoomBacktrack::FromTail:
+		if(SourceRoomNode == CurrentTail){
+			SourceRoomNode = SourceRoomNode->GetPrevNode();
+			// need to add to attemptednewrooms so we don't try the same room again
+			AttemptedNewRooms.Add(CurrentTail->GetValue().RoomData);
+			CurrentTail->GetValue().ToRoomBounds->Destroy();
+			MovesList.RemoveNode(CurrentTail);
+			return true;
+		}
+		break;
+	default: ;
+	}
+	
+	
+	return false;
+}
+
+bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors,
+                                         TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors)
 {
+	REBERU_LOG(Log, "Trying to place next room...")
 	// using this bool to check whether or not we should recursively call this function if we've chosen a new room or door that requires it.
 	bool bAltered = false;
 
@@ -235,6 +294,7 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& Fro
 	if(!(!NewMove.FromRoomDoor.IsEmpty() && NewMove.RoomData && !NewMove.ToRoomDoor.IsEmpty())){
 		REBERU_LOG_ARGS(Warning, "Generation stopped because there was an unset value on initial room placement for room %s | %d | %d | %d",
 			*FromRoomBounds->GetName(), !NewMove.FromRoomDoor.IsEmpty(), NewMove.RoomData, !NewMove.ToRoomDoor.IsEmpty())
+		bIsGenerating = false;
 		return false;
 	}
 	
@@ -276,16 +336,16 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& Fro
 		}
 		
 	}
-		
-	if(!bAltered){
-		REBERU_LOG(Warning, "Ran out of options trying to alter new room move during generation. Will try backtracking if possible.")
-		return false;
-	}
-
+	
 	// Add to the used sets if they don't already exist in there
 	if(!AttemptedNewRooms.Contains(NewMove.RoomData)) AttemptedNewRooms.Add(NewMove.RoomData);
 	if(!AttemptedNewRoomDoors.Contains(NewMove.ToRoomDoor)) AttemptedNewRoomDoors.Add(NewMove.ToRoomDoor);
 	if(!AttemptedOldRoomDoors.Contains(NewMove.FromRoomDoor)) AttemptedOldRoomDoors.Add(NewMove.FromRoomDoor);
+
+	if(!bAltered){
+		REBERU_LOG(Warning, "Ran out of options trying to alter new room move during generation.")
+		return false;
+	}
 
 	REBERU_LOG_ARGS(Log, "Old Door [%s] New Room [%s] New Door [%s]", *NewMove.FromRoomDoor, *NewMove.RoomData->RoomName.ToString(), *NewMove.ToRoomDoor)
 
@@ -355,37 +415,58 @@ void ALevelGeneratorActor::StartGeneration(){
 	
 	ARoomBounds* StartingBounds = SpawnRoomBounds(StartingRoomData, FTransform::Identity);
 	MovesList.AddHead(FReberuMove(StartingRoomData, StartingBounds->GetActorTransform(), StartingBounds, false));
+
+	int32 InfiniteCount = 0;
 	
-	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* FromRoomBoundsNode = MovesList.GetHead();
-	ARoomBounds* FromRoomBounds = StartingBounds;
+	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* SourceRoomNode = MovesList.GetHead();
+	int32 MaxBacktrackTries = ReberuData->MaxBacktrackTries;
+	TSet<UReberuRoomData*> AttemptedNewRooms;
 	while (MovesList.Num() < ReberuData->TargetRoomAmount && bIsGenerating){
+		InfiniteCount++;
+		if(InfiniteCount >= 2500){
+			REBERU_LOG(Error, "Reached the infinite loop guard of 2500 loops, error!")
+			check(false)
+		}
+		
 		TSet<FString> AttemptedNewRoomDoors;
-		TSet<UReberuRoomData*> AttemptedNewRooms;
 		TSet<FString> AttemptedOldRoomDoors;
 		FReberuMove NewMove;
-		const bool bRoomCreated = PlaceNextRoom(NewMove,FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+		ARoomBounds* FromRoomBounds = SourceRoomNode->GetValue().ToRoomBounds;
+		
+		// Try placing the next room
+		const bool bRoomCreated = PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+		AttemptedNewRooms.Empty();
+		
+		if(!bIsGenerating) break;
+
+		// If we created a room successfully, update values accordingly
 		if(bRoomCreated){
+			MaxBacktrackTries = ReberuData->MaxBacktrackTries;
 			NewMove.FromRoomBounds->Room.UsedDoors.Add(NewMove.FromRoomDoor);
 			NewMove.ToRoomBounds->Room.UsedDoors.Add(NewMove.ToRoomDoor);
 			MovesList.AddTail(NewMove);
 			REBERU_LOG(Warning, "Added new move to the list!")
-			// If we've used all doors on our current bounds, let's move to the next room
-			if(FromRoomBounds->Room.UsedDoors.Num() == FromRoomBounds->Room.ReberuDoors.Num()){
-				while(FromRoomBoundsNode != MovesList.GetTail() && (FromRoomBoundsNode->GetValue().ToRoomBounds == FromRoomBounds || FromRoomBoundsNode->GetValue().ToRoomBounds == nullptr)){
-					FromRoomBoundsNode = FromRoomBoundsNode->GetNextNode();
-					REBERU_LOG(Warning, "Iterated here!")
-				}
-				FromRoomBounds = FromRoomBoundsNode->GetValue().ToRoomBounds;
-			}
+			// Choose the next source room (or keep the current one if applicable)
+			ChooseSourceRoom(SourceRoomNode, ReberuData->RoomSelectionMethod);
 		}
 		else{
-			REBERU_LOG(Warning, "Failed to place room during reberu generation. Trying to backtrack...")
-			bIsGenerating = false;
+			REBERU_LOG(Warning, "Failed to place room during reberu generation. Trying to choose next room or backtrack...")
+			// If we failed to place a room, try moving forward through the moveslist, if we're already at the tail, backtrack.
+			// if we successfully choose a new room, we're done here.
+			if(ChooseSourceRoom(SourceRoomNode, ReberuData->RoomSelectionMethod, true)) continue;
+			
 			// backtrack here if possible, otherwise we fail and restart generation
+			if(MaxBacktrackTries > 0){
+				MaxBacktrackTries--;
+				bool bBacktrackResult = BacktrackSourceRoom(SourceRoomNode, ReberuData->BacktrackMethod, AttemptedNewRooms);
+				if(!bBacktrackResult) REBERU_LOG(Warning, "We failed to backtrack, worth debugging!")
+			}
+			else{
+				bIsGenerating = false;
+			}
 		}
 	}
-
-	REBERU_LOG(Log, "Reberu Generation complete!")
+	REBERU_LOG_ARGS(Log, "Reberu Generation complete! Created %d rooms!", MovesList.Num())
 	
 	// Get door on current room
 	// try to determine next room and also the next door

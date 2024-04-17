@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/ReberuData.h"
 #include "Data/ReberuRoomData.h"
 #include "GameFramework/Actor.h"
 #include "LevelGeneratorActor.generated.h"
@@ -117,7 +118,7 @@ protected:
 	bool CanStartGeneration() const;
 
 	/** Do logic to place next room and retry accordingly. */
-	bool PlaceNextRoom(FReberuMove& NewMove, ARoomBounds*& FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors);
+	bool PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors);
 
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform);
@@ -130,6 +131,12 @@ protected:
 
 	/** Spawn in a room bounds instance using the specified size from the room data. */
 	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
+
+	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */
+	virtual bool ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError=false);
+
+	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
+	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedNewRooms);
 };
 
 /** Helper function to get a random object in an array using our random stream. */
