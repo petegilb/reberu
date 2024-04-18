@@ -31,6 +31,11 @@ public:
 	bool bIsFirstCall = true;
 	bool bWantToCancel = false;
 	bool bIsCompleted = false;
+	int32 Seed = -1;
+
+	// Debug delay vars
+	bool bDebugDelay = false;
+	float DebugTimer = 0.f;
 
 	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* SourceRoomNode = nullptr;
 	int32 MaxBacktrackTries = 0;
@@ -47,15 +52,17 @@ public:
 	EGenerateRoomsOutputPins& Output;
 
 	FGenerateRoomsAction(ALevelGeneratorActor* LevelGenerator, UReberuData* ReberuData, int32& OutGeneratedRooms,
-		bool& bOutSuccess, const FLatentActionInfo& LatentActionInfo, EGenerateRoomsOutputPins& OutputPins)
+		bool& bOutSuccess, const FLatentActionInfo& LatentActionInfo, EGenerateRoomsOutputPins& OutputPins, const int32 Seed, const bool bDebugDelay=false)
 		: LevelGenerator(LevelGenerator),
 		  ReberuData(ReberuData),
+		  Seed(Seed),
+		  bDebugDelay(bDebugDelay),
 		  MovesList(LevelGenerator->GetMovesListRef()),
 		  ReberuRandomStream(LevelGenerator->GetReberuRandomStream()),
 		  GeneratedRooms(OutGeneratedRooms),
 		  bSuccess(bOutSuccess),
 		  LatentActionInfo(LatentActionInfo),
-		  Output(OutputPins)
+	Output(OutputPins)
 	{
 		Output = EGenerateRoomsOutputPins::OnStarted;
 		bSuccess = false;

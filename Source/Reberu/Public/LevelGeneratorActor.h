@@ -68,6 +68,9 @@ struct FReberuMove{
 	bool CanRevertMove = true; 
 };
 
+/**
+ * Level Generator used for Reberu Level Generation! 
+ */
 UCLASS()
 class REBERU_API ALevelGeneratorActor : public AActor
 {
@@ -108,14 +111,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
 	UTexture2D* SpriteTexture;
 
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
-	// UReberuData* ReberuData = nullptr;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
 	bool bStartOnBeginPlay = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Reberu")
-	int32 ReberuSeed = -1;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Reberu")
 	FRandomStream ReberuRandomStream;

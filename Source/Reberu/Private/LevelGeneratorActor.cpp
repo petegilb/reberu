@@ -475,13 +475,6 @@ void ALevelGeneratorActor::StartGeneration(){
 
 	bIsGenerating = true;
 
-	if(ReberuSeed != -1){
-		ReberuRandomStream = FRandomStream(ReberuSeed);
-	}
-	else{
-		ReberuRandomStream.GenerateNewSeed();
-	}
-
 	// Execute bp start generation event
 	K2_StartGeneration();
 	
@@ -515,6 +508,9 @@ void ALevelGeneratorActor::StartGeneration(){
 }
 
 void ALevelGeneratorActor::ClearGeneration(){
+	if(UWorld* World = GetWorld()){
+		World->GetLatentActionManager().RemoveActionsForObject(this);
+	}
 	for (ULevelStreamingDynamic* LevelInstance : LevelInstances){
 		if(LevelInstance->IsValidLowLevelFast()){
 			DespawnRoom(LevelInstance);

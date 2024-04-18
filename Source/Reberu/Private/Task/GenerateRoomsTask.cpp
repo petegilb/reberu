@@ -7,7 +7,15 @@
 #include "RoomBounds.h"
 
 void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
-	// todo do some failure checks here.
+
+	// Delay for visual debugging purposes. False by default.
+	if(bDebugDelay){
+		DebugTimer += Response.ElapsedTime();
+		if(DebugTimer < .5f){
+			return;
+		}
+		DebugTimer = 0.f;
+	}
 
 	// If we hit completed up here that means we've failed.
 	const bool bHasFailed = !(LevelGenerator && ReberuData && ReberuData->ReberuRooms.Num());
@@ -32,6 +40,13 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 		bSuccess = true;
 
 		REBERU_LOG_ARGS(Log, "Starting level generation with %s", *ReberuData->GetName())
+
+		if(Seed > 0){
+			ReberuRandomStream = FRandomStream(Seed);
+		}
+		else{
+			ReberuRandomStream.GenerateNewSeed();
+		}
 
 		UReberuRoomData* StartingRoomData = ReberuData->StartingRoom ? ReberuData->StartingRoom : GetRandomObjectInArray<UReberuRoomData*>(ReberuData->ReberuRooms, ReberuRandomStream);
 	
