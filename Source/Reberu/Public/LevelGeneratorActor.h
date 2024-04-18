@@ -78,10 +78,10 @@ public:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable, CallInEditor, Category="Reberu")
-	void StartGeneration();
+	virtual void StartGeneration();
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category="Reberu")
-	void ClearGeneration();
+	virtual void ClearGeneration();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
@@ -115,7 +115,7 @@ protected:
 	TDoubleLinkedList<FReberuMove> MovesList;
 
 	/** Does some prechecks before generation starts to see if we can even start generation. */
-	bool CanStartGeneration() const;
+	virtual bool CanStartGeneration() const;
 
 	/** Do logic to place next room and retry accordingly. */
 	bool PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors);
@@ -131,6 +131,12 @@ protected:
 
 	/** Spawn in a room bounds instance using the specified size from the room data. */
 	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
+
+	/**
+	 * The function that is called to generate rooms. Should only be called within StartGeneration and not outside of that!
+	 * Returns the number of rooms generated.
+	 */
+	virtual int32 GenerateRooms(UReberuData* InReberuData);
 
 	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */
 	virtual bool ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError=false);
