@@ -6,6 +6,7 @@
 #include "Data/ReberuData.h"
 #include "Data/ReberuRoomData.h"
 #include "GameFramework/Actor.h"
+#include "LatentActions.h"
 #include "LevelGeneratorActor.generated.h"
 
 class ARoomBounds;
@@ -79,9 +80,25 @@ public:
 
 	UFUNCTION(BlueprintCallable, CallInEditor, Category="Reberu")
 	virtual void StartGeneration();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void K2_StartGeneration();
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category="Reberu")
 	virtual void ClearGeneration();
+
+	/** Spawn in a room bounds instance using the specified size from the room data. */
+	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
+
+	/** Do logic to place next room and retry accordingly. */
+	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>&
+	                   AttemptedOldRoomDoors);
+
+	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */
+	virtual bool ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError=false);
+
+	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
+	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedNewRooms);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
@@ -91,8 +108,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
 	UTexture2D* SpriteTexture;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
-	UReberuData* ReberuData = nullptr;
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
+	// UReberuData* ReberuData = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
 	bool bStartOnBeginPlay = false;
@@ -116,10 +133,7 @@ protected:
 
 	/** Does some prechecks before generation starts to see if we can even start generation. */
 	virtual bool CanStartGeneration() const;
-
-	/** Do logic to place next room and retry accordingly. */
-	bool PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors);
-
+	
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform);
 
@@ -129,20 +143,19 @@ protected:
 	/** Calculates the transform that the next room should spawn at by using their local transforms and the transforms of the doors */
 	FTransform CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor);
 
-	/** Spawn in a room bounds instance using the specified size from the room data. */
-	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
-
 	/**
 	 * The function that is called to generate rooms. Should only be called within StartGeneration and not outside of that!
 	 * Returns the number of rooms generated.
 	 */
 	virtual int32 GenerateRooms(UReberuData* InReberuData);
 
-	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */
-	virtual bool ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError=false);
+public:
+	TDoubleLinkedList<FReberuMove>& GetMovesListRef(){return MovesList;}
 
-	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
-	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedNewRooms);
+	FRandomStream& GetReberuRandomStream(){return ReberuRandomStream;}
+
+	bool IsGenerating() const{return bIsGenerating;}
+	void SetIsGenerating(const bool InBool){bIsGenerating = InBool;}
 };
 
 /** Helper function to get a random object in an array using our random stream. */

@@ -5,6 +5,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogReberuEditor, All, All)
 
+#define REBERU_ED_LOG(LogLevel, Message) UE_LOG(LogReberuEditor, LogLevel, TEXT(Message))
+#define REBERU_ED_LOG_ARGS(LogLevel, Message, ...) UE_LOG(LogReberuEditor, LogLevel, TEXT(Message), __VA_ARGS__)
+
 class FReberuEditorModule : public IModuleInterface
 {
 public:

@@ -9,7 +9,8 @@ public class ReberuEditor : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core"
+                "Core",
+                "Reberu"
             }
         );
 

@@ -181,7 +181,7 @@ ARoomBounds* ALevelGeneratorActor::SpawnRoomBounds(const UReberuRoomData* InRoom
 }
 
 int32 ALevelGeneratorActor::GenerateRooms(UReberuData* InReberuData){
-	ReberuData = InReberuData;
+	UReberuData* ReberuData = InReberuData;
 	
 	REBERU_LOG_ARGS(Log, "Starting level generation with %s", *ReberuData->GetName())
 	
@@ -210,7 +210,7 @@ int32 ALevelGeneratorActor::GenerateRooms(UReberuData* InReberuData){
 		ARoomBounds* FromRoomBounds = SourceRoomNode->GetValue().ToRoomBounds;
 		
 		// Try placing the next room
-		const bool bRoomCreated = PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+		const bool bRoomCreated = PlaceNextRoom(ReberuData, NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
 		AttemptedNewRooms.Empty();
 		
 		if(!bIsGenerating) break;
@@ -317,7 +317,7 @@ bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::T
 	return false;
 }
 
-bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors,
+bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors,
                                          TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>& AttemptedOldRoomDoors)
 {
 	REBERU_LOG(Log, "Trying to place next room...")
@@ -391,7 +391,7 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* From
 
 			REBERU_LOG_ARGS(Log, "Trying out new room %s", *NewMove.RoomData->RoomName.ToString());
 
-			return PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+			return PlaceNextRoom(ReberuData, NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
 		}
 	}
 	
@@ -406,7 +406,7 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* From
 
 			REBERU_LOG_ARGS(Log, "Trying to select different door on the current room %s", *NewMove.FromRoomDoor, *NewMove.RoomData->RoomName.ToString());
 			
-			return PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+			return PlaceNextRoom(ReberuData, NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
 		}
 		
 	}
@@ -465,7 +465,7 @@ bool ALevelGeneratorActor::PlaceNextRoom(FReberuMove& NewMove, ARoomBounds* From
 	}
 		
 	NewRoomBounds->Destroy();
-	return PlaceNextRoom(NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+	return PlaceNextRoom(ReberuData, NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
 }
 
 void ALevelGeneratorActor::StartGeneration(){
@@ -482,14 +482,8 @@ void ALevelGeneratorActor::StartGeneration(){
 		ReberuRandomStream.GenerateNewSeed();
 	}
 
-	// Generate Rooms should be called here.
-
-	// UReberuData* FirstReberuDataSet;
-	// UReberuData* SecondReberuDataSet;
-	
-	/** Here's a c++ example of how you might want to handle async generation. */
-
-	GenerateRooms(ReberuData);
+	// Execute bp start generation event
+	K2_StartGeneration();
 	
 	// Get door on current room
 	// try to determine next room and also the next door
