@@ -54,7 +54,7 @@ ALevelGeneratorActor::ALevelGeneratorActor(const FObjectInitializer& ObjectIniti
 		SpriteComponent->Mobility = EComponentMobility::Static;
 		SpriteComponent->SetupAttachment(RootComponent);
 	}
-#endif // WITH_EDITORONLY_DATA
+#endif
 }
 
 void ALevelGeneratorActor::BeginPlay()
@@ -84,15 +84,15 @@ bool ALevelGeneratorActor::CanStartGeneration() const{
 	return true;
 }
 
-ULevelStreamingDynamic* ALevelGeneratorActor::SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform){
+ULevelStreamingDynamic* ALevelGeneratorActor::SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName){
 	if(!GetWorld() || !InRoom) return nullptr;
 
 	bool bSpawnedSuccessfully = false;
 	ULevelStreamingDynamic* SpawnedRoom = ULevelStreamingDynamic::LoadLevelInstanceBySoftObjectPtr(this, InRoom->Room.Level, SpawnTransform,
-		bSpawnedSuccessfully, InRoom->RoomName.ToString());
+		bSpawnedSuccessfully, LevelName);
 
 	if(!bSpawnedSuccessfully) REBERU_LOG_ARGS(Warning, "SpawnRoom failed spawning room with name %s", InRoom->RoomName)
-
+	
 	return SpawnedRoom;
 }
 
@@ -477,54 +477,23 @@ void ALevelGeneratorActor::StartGeneration(){
 
 	// Execute bp start generation event
 	K2_StartGeneration();
-	
-	// Get door on current room
-	// try to determine next room and also the next door
-	// calculate transform for new room that is rotated appropriately
-	// do collision test
-	// if failure go back to the start of this
-	// otherwise continue on
-
-	// need to just refactor the stuff underneath here.
-	// ULevelStreamingDynamic* StartingRoomInstance = SpawnRoom(StartingRoomData, FTransform::Identity);
-	// if(!StartingRoomInstance) return;
-	// LevelInstances.Add(StartingRoomInstance);
-	//
-	// UReberuRoomData* CurrentRoomData = StartingRoomData;
-	//
-	// while(LevelInstances.Num() < ReberuData->TargetRoomAmount && bIsGenerating){
-	// 	FReberuDoor CurrentRoomChosenDoor = ChooseRoomDoor(CurrentRoomData);
-	// 	UReberuRoomData* NextRoomData = ChooseNextRoom();
-	// 	FReberuDoor NextRoomDoor = ChooseRoomDoor(NextRoomData);
-	// 	FTransform NextRoomTransform = CalculateTransformFromDoor(
-	// 		CurrentRoomData, CurrentRoomChosenDoor,
-	// 		NextRoomData, NextRoomDoor);
-	// 	ULevelStreamingDynamic* NewRoomInstance = SpawnRoom(NextRoomData, NextRoomTransform);
-	// 	if(!NewRoomInstance) return;
-	// 	LevelInstances.Add(NewRoomInstance);
-	// 	CurrentRoomData = NextRoomData;
-	// }
-	
 }
 
 void ALevelGeneratorActor::ClearGeneration(){
 	if(UWorld* World = GetWorld()){
 		World->GetLatentActionManager().RemoveActionsForObject(this);
 	}
-	for (ULevelStreamingDynamic* LevelInstance : LevelInstances){
-		if(LevelInstance->IsValidLowLevelFast()){
-			DespawnRoom(LevelInstance);
-		}
-	}
-	for (auto Move : MovesList){
+	for (const auto Move : MovesList){
 		if(Move.ToRoomBounds){
 			Move.ToRoomBounds->Destroy();
+		}
+		if(Move.SpawnedLevel){
+			DespawnRoom(Move.SpawnedLevel);
 		}
 	}
 	bIsGenerating = false;
 	// TODO reset all variables here so we can do another clean run. Should also call this in StartGeneration if we have already one one that still exists.
 	MovesList.Empty();
-	LevelInstances.Empty();
 }
 
 

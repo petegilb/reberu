@@ -64,6 +64,8 @@ struct FReberuMove{
 
 	FString ToRoomDoor {FString()};
 
+	ULevelStreamingDynamic* SpawnedLevel {nullptr};
+
 	/** Specifies whether this move can be reverted during generation. */
 	bool CanRevertMove = true; 
 };
@@ -102,6 +104,12 @@ public:
 
 	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
 	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedNewRooms);
+	
+	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
+	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);
+
+	/** Despawn a room from the world by unloading its instance */
+	void DespawnRoom(ULevelStreamingDynamic* SpawnedRoom);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
@@ -122,20 +130,11 @@ protected:
 
 	UPROPERTY()
 	bool bIsGenerating = false;
-
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Reberu")
-	TArray<ULevelStreamingDynamic*> LevelInstances;
 	
 	TDoubleLinkedList<FReberuMove> MovesList;
 
 	/** Does some prechecks before generation starts to see if we can even start generation. */
 	virtual bool CanStartGeneration() const;
-	
-	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
-	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform);
-
-	/** Despawn a room from the world by unloading its instance */
-	void DespawnRoom(ULevelStreamingDynamic* SpawnedRoom);
 
 	/** Calculates the transform that the next room should spawn at by using their local transforms and the transforms of the doors */
 	FTransform CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor);

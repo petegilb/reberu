@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Task/FinalizeRoomsTask.h"
 #include "Task/GenerateRoomsTask.h"
 #include "ReberuLibrary.generated.h"
 
@@ -33,5 +34,9 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContext", Latent, LatentInfo = "LatentInfo", ExpandEnumAsExecs = "InputPins,OutputPins"), Category="Reberu")
 	static void GenerateRooms(UObject* WorldContext, FLatentActionInfo LatentInfo, EGenerateRoomsInputPins InputPins, EGenerateRoomsOutputPins& OutputPins,
 	                          ALevelGeneratorActor* LevelGenerator, UReberuData* ReberuData, const int32 Seed, const bool DebugDelay, int32& OutGeneratedRooms, bool& bOutSuccess);
+
 	
+	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContext", Latent, LatentInfo = "LatentInfo", ExpandEnumAsExecs = "InputPins,OutputPins"), Category="Reberu")
+	static void FinalizeRooms(UObject* WorldContext, FLatentActionInfo LatentInfo, EFinalizeRoomsInputPins InputPins, EFinalizeRoomsOutputPins& OutputPins,
+								ALevelGeneratorActor* LevelGenerator, bool& bOutSuccess);
 };
