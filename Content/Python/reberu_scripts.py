@@ -51,3 +51,14 @@ def restore_room_bounds(room_data : unreal.ReberuRoomData, bp_room_class):
     new_actor.room_box.set_box_extent(room_data.room.box_extent)
     new_actor.room = room_data.room
     return new_actor.get_name()
+
+def regenerate_door_ids(room_data : unreal.ReberuRoomData):
+    """
+    Regenerates all ids for the doors on the inputted room asset.
+    :param room_data: room data asset to grab information from
+    """
+    if not room_data:
+        return False
+    EAS.checkout_loaded_asset(room_data)
+    unreal.ReberuLibrary.regenerate_door_ids(room_data)
+    EAL.save_loaded_asset(room_data)

@@ -22,7 +22,7 @@ struct FReberuDoor{
 		BoxExtent = ReberuSettings->DefaultDoorExtent;
 	}
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FString DoorId;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

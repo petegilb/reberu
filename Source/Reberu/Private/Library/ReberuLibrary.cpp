@@ -67,3 +67,9 @@ void UReberuLibrary::FinalizeRooms(UObject* WorldContext, FLatentActionInfo Late
 		}
 	}
 }
+
+void UReberuLibrary::RegenerateDoorIds(UReberuRoomData* RoomData){
+	for (FReberuDoor& Door : RoomData->Room.ReberuDoors){
+		Door.GenerateNewDoorId();
+	}
+}
