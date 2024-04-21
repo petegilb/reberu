@@ -61,14 +61,10 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 	}
 
 	if(MovesList.Num() < ReberuData->TargetRoomAmount && LevelGenerator->IsGenerating()){
-		TSet<FString> AttemptedTargetRoomDoors;
-		TSet<FString> AttemptedSourceRoomDoors;
 		FReberuMove NewMove;
-		ARoomBounds* SourceRoomBounds = SourceRoomNode->GetValue().TargetRoomBounds;
 
 		// Try placing the next room
-		const bool bRoomCreated = LevelGenerator->PlaceNextRoom(ReberuData, NewMove, SourceRoomBounds, AttemptedTargetRoomDoors, AttemptedTargetRooms, AttemptedSourceRoomDoors);
-		AttemptedTargetRooms.Empty();
+		const bool bRoomCreated = LevelGenerator->PlaceNextRoom(ReberuData, SourceRoomNode->GetValue(), NewMove);
 
 		if(!LevelGenerator->IsGenerating()){
 			bWantToCancel = true;
@@ -96,9 +92,10 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 			if(LevelGenerator->ChooseSourceRoom(SourceRoomNode, ReberuData->RoomSelectionMethod, true)) return;
 			
 			// backtrack here if possible, otherwise we fail
+			REBERU_LOG_ARGS(Warning, "Max backtrack tries is %d", MaxBacktrackTries)
 			if(MaxBacktrackTries > 0){
 				MaxBacktrackTries--;
-				const bool bBacktrackResult = LevelGenerator->BacktrackSourceRoom(SourceRoomNode, ReberuData->BacktrackMethod, AttemptedTargetRooms);
+				const bool bBacktrackResult = LevelGenerator->BacktrackSourceRoom(SourceRoomNode, ReberuData->BacktrackMethod);
 				if(!bBacktrackResult) REBERU_LOG(Warning, "We failed to backtrack, worth debugging!")
 			}
 			else{

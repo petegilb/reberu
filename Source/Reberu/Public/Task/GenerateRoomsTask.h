@@ -39,7 +39,6 @@ public:
 
 	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* SourceRoomNode = nullptr;
 	int32 MaxBacktrackTries = 0;
-	TSet<UReberuRoomData*> AttemptedTargetRooms;
 
 	// References
 	TDoubleLinkedList<FReberuMove>& MovesList;

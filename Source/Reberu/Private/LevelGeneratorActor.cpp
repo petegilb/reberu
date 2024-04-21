@@ -213,11 +213,10 @@ bool ALevelGeneratorActor::ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDou
 	default: ;
 	}
 	
-	
 	return false;
 }
 
-bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedTargetRooms){
+bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, const ERoomBacktrack BacktrackMethod){
 	REBERU_LOG(Log, "Trying to backtrack source room...")
 	if(MovesList.Num() <= 1) return false;
 	
@@ -233,8 +232,6 @@ bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::T
 				*CurrentTail->GetValue().TargetRoomBounds->GetName(), *CurrentTail->GetValue().RoomData->RoomName.ToString(),
 				*CurrentTail->GetValue().SourceRoomBounds->GetName(), *CurrentTail->GetPrevNode()->GetValue().RoomData->RoomName.ToString())
 			
-			// need to add to attemptedTargetRooms so we don't try the same room again
-			AttemptedTargetRooms.Add(CurrentTail->GetValue().RoomData);                      
 			// Destroy the bounds that we are backtracking from
 			CurrentTail->GetValue().TargetRoomBounds->Destroy();
 			// update used doors on the bounds that we are backtracking to
@@ -251,121 +248,63 @@ bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::T
 	return false;
 }
 
-bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* SourceRoomBounds, TSet<FString>& AttemptedTargetRoomDoors,
-                                         TSet<UReberuRoomData*>& AttemptedTargetRooms, TSet<FString>& AttemptedSourceRoomDoors)
-{
+bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& SourceMove, FReberuMove& NewMove){
 	REBERU_LOG(Log, "Trying to place next room...")
-	// using this bool to check whether or not we should recursively call this function if we've chosen a new room or door that requires it.
-	bool bAltered = false;
 
-	NewMove.SourceRoomBounds = SourceRoomBounds;
+	NewMove.SourceRoomBounds = SourceMove.TargetRoomBounds;
 
 	// Get all choices for everything. Could definitely make this more efficient.
+	// TODO can limit this more based on what rooms are possible to transition to from this one.
 	TArray<UReberuRoomData*> TargetRoomChoices;
-	for (UReberuRoomData* RoomOption : ReberuData->ReberuRooms){
-		if(!AttemptedTargetRooms.Contains(RoomOption)){
-			TargetRoomChoices.Add(RoomOption);
-		}
-	}
+	TargetRoomChoices += ReberuData->ReberuRooms;
 
-	// if all the values we need are not valid, let's set them
-	NewMove.RoomData = !NewMove.RoomData && TargetRoomChoices.Num() > 0 ? GetRandomObjectInArray<UReberuRoomData*>(TargetRoomChoices, ReberuRandomStream) : NewMove.RoomData;
-	
-	TArray<FReberuDoor> TargetRoomDoorChoices;
-	if(NewMove.RoomData){
-		for (FReberuDoor Door : NewMove.RoomData->Room.ReberuDoors){
-			if(!AttemptedTargetRoomDoors.Contains(Door.DoorId)){
-				TargetRoomDoorChoices.Add(Door);
-			}
-		}
-	}
-	
+	// Get source room possible doors (remove the already used doors)
 	TArray<FReberuDoor> SourceRoomDoorChoices;
-	for (FReberuDoor Door : SourceRoomBounds->Room.ReberuDoors){
-		if(!(AttemptedSourceRoomDoors.Contains(Door.DoorId) || SourceRoomBounds->Room.UsedDoors.Contains(Door.DoorId))){
+	for(FReberuDoor Door: SourceMove.TargetRoomBounds->Room.ReberuDoors){
+		if(!SourceMove.TargetRoomBounds->Room.UsedDoors.Contains(Door.DoorId)){
 			SourceRoomDoorChoices.Add(Door);
 		}
 	}
 
-	// If all doors on the source room have already been used, exit and try a new room
-	if(SourceRoomBounds->Room.UsedDoors.Num() == SourceRoomBounds->Room.ReberuDoors.Num()){
-		REBERU_LOG(Log, "All doors on the source room have already been used.")
-		return false;
-	}
-
-	NewMove.SourceRoomDoor = NewMove.SourceRoomDoor.IsEmpty() && SourceRoomDoorChoices.Num() > 0 ? GetRandomObjectInArray(SourceRoomDoorChoices, ReberuRandomStream).DoorId : NewMove.SourceRoomDoor;
-	NewMove.TargetRoomDoor = NewMove.TargetRoomDoor.IsEmpty() && TargetRoomDoorChoices.Num() > 0 ? GetRandomObjectInArray(TargetRoomDoorChoices, ReberuRandomStream).DoorId : NewMove.TargetRoomDoor;
+	TArray<FAttemptedMove> PossibleMoves;
 	
-	// TODO add logic for transitions and rules
-
-	// if they still aren't set, we've hit an error
-	if(!(!NewMove.SourceRoomDoor.IsEmpty() && NewMove.RoomData && !NewMove.TargetRoomDoor.IsEmpty())){
-		REBERU_LOG_ARGS(Warning, "Generation stopped because there was an unset value on initial room placement for room %s | %d | %d | %d",
-			*SourceRoomBounds->GetName(), !NewMove.SourceRoomDoor.IsEmpty(), NewMove.RoomData, !NewMove.TargetRoomDoor.IsEmpty())
-		bIsGenerating = false;
-		return false;
-	}
-	
-	// Try the doors on the new room first
-	if(TargetRoomDoorChoices.Num() > 0){
-		NewMove.TargetRoomDoor = GetRandomObjectInArray<FReberuDoor>(TargetRoomDoorChoices, ReberuRandomStream).DoorId;
-
-		REBERU_LOG_ARGS(Log, "Trying out new door %s on room %s", *NewMove.TargetRoomDoor, *NewMove.RoomData->RoomName.ToString());
-		AttemptedTargetRoomDoors.Add(NewMove.TargetRoomDoor);
-		bAltered = true;
-	}
-
-	// Then try selecting a new room if we didn't select a new door
-	if(!bAltered){
-		if(TargetRoomChoices.Num() > 0){
-			NewMove.RoomData = GetRandomObjectInArray<UReberuRoomData*>(TargetRoomChoices, ReberuRandomStream);
-			// reset attempted doors since we will be selecting a new room
-			AttemptedTargetRoomDoors.Empty();
-			AttemptedTargetRooms.Add(NewMove.RoomData);
-
-			REBERU_LOG_ARGS(Log, "Trying out new room %s", *NewMove.RoomData->RoomName.ToString());
-
-			return PlaceNextRoom(ReberuData, NewMove, SourceRoomBounds, AttemptedTargetRoomDoors, AttemptedTargetRooms, AttemptedSourceRoomDoors);
+	// Generate possible moves and then delete them based on the already created attempted moves...
+	// TODO get rid of the nested loop bc this is pretty gross. O(n^3)
+	for(FReberuDoor SourceDoor : SourceRoomDoorChoices){
+		for(UReberuRoomData* TargetRoom : TargetRoomChoices){
+			for(FReberuDoor TargetDoor : TargetRoom->Room.ReberuDoors){
+				FAttemptedMove PossibleMove = FAttemptedMove(TargetRoom, SourceDoor.DoorId, TargetDoor.DoorId);
+				if(!SourceMove.AttemptedMoves.Contains(PossibleMove)){
+					PossibleMoves.Add(PossibleMove);
+				}
+			}
 		}
 	}
-	
-	// if all that doesn't work, try selecting a new door on the old room and restarting from there
-	if(!bAltered){
-		if(SourceRoomDoorChoices.Num() > 0){
-			NewMove.SourceRoomDoor = GetRandomObjectInArray(SourceRoomDoorChoices, ReberuRandomStream).DoorId;
-			
-			AttemptedTargetRooms.Empty();
-			AttemptedTargetRoomDoors.Empty();
-			AttemptedSourceRoomDoors.Add(NewMove.SourceRoomDoor);
 
-			REBERU_LOG_ARGS(Log, "Trying to select different door on the current room %s", *NewMove.SourceRoomDoor, *NewMove.RoomData->RoomName.ToString());
-			
-			return PlaceNextRoom(ReberuData, NewMove, SourceRoomBounds, AttemptedTargetRoomDoors, AttemptedTargetRooms, AttemptedSourceRoomDoors);
-		}
-		
-	}
-	
-	// Add to the used sets if they don't already exist in there
-	if(!AttemptedTargetRooms.Contains(NewMove.RoomData)) AttemptedTargetRooms.Add(NewMove.RoomData);
-	if(!AttemptedTargetRoomDoors.Contains(NewMove.TargetRoomDoor)) AttemptedTargetRoomDoors.Add(NewMove.TargetRoomDoor);
-	if(!AttemptedSourceRoomDoors.Contains(NewMove.SourceRoomDoor)) AttemptedSourceRoomDoors.Add(NewMove.SourceRoomDoor);
-
-	if(!bAltered){
-		REBERU_LOG(Log, "Ran out of options trying to alter new room move during generation.")
+	if(PossibleMoves.Num() == 0){
+		REBERU_LOG(Log, "No more possible moves on this source room.")
 		return false;
 	}
 
-	REBERU_LOG_ARGS(Log, "Old Door [%s] New Room [%s] New Door [%s]", *NewMove.SourceRoomDoor, *NewMove.RoomData->RoomName.ToString(), *NewMove.TargetRoomDoor)
+	FAttemptedMove ChosenMove = GetRandomObjectInArray(PossibleMoves, ReberuRandomStream);
+	SourceMove.AttemptedMoves.Add(ChosenMove);
 
-	FReberuDoor FromDoor = *SourceRoomBounds->Room.GetDoorById(NewMove.SourceRoomDoor);
-	FReberuDoor ToDoor = *NewMove.RoomData->Room.GetDoorById(NewMove.TargetRoomDoor);
+	NewMove.RoomData = ChosenMove.RoomData;
+	NewMove.SourceRoomDoor = ChosenMove.SourceRoomDoor;
+	NewMove.TargetRoomDoor = ChosenMove.TargetRoomDoor;
 
-	const FTransform TargetRoomTransform = CalculateTransformFromDoor(SourceRoomBounds,
-		FromDoor, NewMove.RoomData, ToDoor);
+	REBERU_LOG_ARGS(Log, "Trying : Source Room [%s] Source Door [%s] Target Room [%s] Target Door [%s]", *SourceMove.RoomData->RoomName.ToString(), *NewMove.SourceRoomDoor,
+		*NewMove.RoomData->RoomName.ToString(), *NewMove.TargetRoomDoor)
+	
+	FReberuDoor SourceDoor = *SourceMove.RoomData->Room.GetDoorById(NewMove.SourceRoomDoor);
+	FReberuDoor TargetDoor = *NewMove.RoomData->Room.GetDoorById(NewMove.TargetRoomDoor);
+
+	const FTransform TargetRoomTransform = CalculateTransformFromDoor(SourceMove.TargetRoomBounds,
+		SourceDoor, NewMove.RoomData, TargetDoor);
 
 	ARoomBounds* TargetRoomBounds = SpawnRoomBounds(NewMove.RoomData, TargetRoomTransform);
 
-	REBERU_LOG_ARGS(Log, "Spawned in New room bounds, %s (%s), which is connected to: %s", *TargetRoomBounds->GetName(), *NewMove.RoomData->RoomName.ToString(), *SourceRoomBounds->GetName())
+	REBERU_LOG_ARGS(Log, "Spawned in New room bounds, %s (%s), which is connected to: %s", *TargetRoomBounds->GetName(), *NewMove.RoomData->RoomName.ToString(), *SourceMove.TargetRoomBounds->GetName())
 	
 	// Check collision
 	UWorld* World = GetWorld();
@@ -381,7 +320,7 @@ bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& N
 	
 	TSet<AActor*> OverlappingActors;
 	
-	World->OverlapMultiByObjectType(Overlaps, TargetRoomBounds->GetActorLocation(), FQuat::Identity, ObjectParams, FCollisionShape::MakeBox(TargetRoomBounds->RoomBox->GetScaledBoxExtent()), Params);
+	World->OverlapMultiByObjectType(Overlaps, TargetRoomBounds->RoomBox->GetCenterOfMass(), TargetRoomBounds->GetActorRotation().Quaternion(), ObjectParams, FCollisionShape::MakeBox(TargetRoomBounds->RoomBox->GetUnscaledBoxExtent()), Params);
 
 	for (FOverlapResult& Overlap : Overlaps){
 		OverlappingActors.Add(Overlap.GetActor());
@@ -395,11 +334,12 @@ bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& N
 	
 	if(OverlappingActors.Num() == 0){
 		NewMove.TargetRoomBounds = TargetRoomBounds;
+		// DrawDebugBox(World, TargetRoomBounds->RoomBox->GetCenterOfMass(), TargetRoomBounds->RoomBox->GetUnscaledBoxExtent(), TargetRoomBounds->GetActorRotation().Quaternion(), FColor::Green, true, -1, 0, 2.f);
 		return true;
 	}
 		
 	TargetRoomBounds->Destroy();
-	return PlaceNextRoom(ReberuData, NewMove, SourceRoomBounds, AttemptedTargetRoomDoors, AttemptedTargetRooms, AttemptedSourceRoomDoors);
+	return PlaceNextRoom(ReberuData, SourceMove, NewMove);
 }
 
 void ALevelGeneratorActor::StartGeneration(){
@@ -416,6 +356,9 @@ void ALevelGeneratorActor::StartGeneration(){
 void ALevelGeneratorActor::ClearGeneration(){
 	if(UWorld* World = GetWorld()){
 		World->GetLatentActionManager().RemoveActionsForObject(this);
+	}
+	else{
+		return;
 	}
 	for (const auto Move : MovesList){
 		if(Move.TargetRoomBounds){

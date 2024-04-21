@@ -15,13 +15,50 @@ class ULevelStreamingDynamic;
 class UReberuRoomData;
 class UReberuData;
 
+/** Simplified version of a move that we will use when generating */
+USTRUCT()
+struct FAttemptedMove{
+	GENERATED_BODY()
+
+	FAttemptedMove(){}
+
+	FAttemptedMove(UReberuRoomData* RoomData, const FString& SourceRoomDoor, const FString& TargetRoomDoor)
+		: RoomData(RoomData),
+		  SourceRoomDoor(SourceRoomDoor),
+		  TargetRoomDoor(TargetRoomDoor){
+	}
+
+	UPROPERTY()
+	UReberuRoomData* RoomData {nullptr};
+
+	FString SourceRoomDoor {FString()};
+
+	FString TargetRoomDoor {FString()};
+	
+	FORCEINLINE bool operator==(const FAttemptedMove& Other) const
+	{
+		return Equals(Other);
+	}
+
+	// Only compares the to/from doors + the room data
+	FORCEINLINE	bool Equals(const FAttemptedMove& Other) const
+	{
+		return RoomData == Other.RoomData && (SourceRoomDoor.Equals(Other.SourceRoomDoor) && TargetRoomDoor.Equals(TargetRoomDoor));
+	}
+};
+
+/** Overriding the hash so we can use it properly with the attemptedmoves set. Just hashes together the source and target doors */
+FORCEINLINE uint32 GetTypeHash(const FAttemptedMove& This)
+{
+	return HashCombine(GetTypeHash(This.SourceRoomDoor), GetTypeHash(This.TargetRoomDoor));
+}
 
 /** 
  * Struct representing a move in Reberu Level generation.
  * To be used within our doubly linked list.
+ * Could probably make this extend attemptedmove.
  */
 struct FReberuMove{
-
 	FReberuMove(){
 		
 	}
@@ -66,9 +103,13 @@ struct FReberuMove{
 
 	ULevelStreamingDynamic* SpawnedLevel {nullptr};
 
+	/** Attempted moves used during generation and backtracking. */
+	TSet<FAttemptedMove> AttemptedMoves;
+
 	/** Specifies whether this move can be reverted during generation. */
-	bool CanRevertMove = true; 
+	bool CanRevertMove = true;
 };
+
 
 /**
  * Level Generator used for Reberu Level Generation! 
@@ -96,14 +137,13 @@ public:
 	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
 
 	/** Do logic to place next room and retry accordingly. */
-	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* SourceRoomBounds, TSet<FString>& AttemptedTargetRoomDoors, TSet<UReberuRoomData*>& AttemptedTargetRooms, TSet<FString>&
-	                   AttemptedSourceRoomDoors);
+	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& SourceMove, FReberuMove& NewMove);
 
 	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */
 	virtual bool ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError=false);
 
 	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
-	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedTargetRooms);
+	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod);
 	
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);
