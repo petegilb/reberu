@@ -96,14 +96,14 @@ public:
 	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
 
 	/** Do logic to place next room and retry accordingly. */
-	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* SourceRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>&
-	                   AttemptedOldRoomDoors);
+	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* SourceRoomBounds, TSet<FString>& AttemptedTargetRoomDoors, TSet<UReberuRoomData*>& AttemptedTargetRooms, TSet<FString>&
+	                   AttemptedSourceRoomDoors);
 
 	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */
 	virtual bool ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError=false);
 
 	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
-	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedNewRooms);
+	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod, TSet<UReberuRoomData*>& AttemptedTargetRooms);
 	
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);
