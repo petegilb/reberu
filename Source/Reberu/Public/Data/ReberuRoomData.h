@@ -18,7 +18,6 @@ struct FReberuDoor{
 	FReberuDoor(){
 		DoorId = "";
 		GenerateNewDoorId();
-		Weight = 0.f;
 		const UReberuSettings* ReberuSettings = GetDefault<UReberuSettings>();
 		BoxExtent = ReberuSettings->DefaultDoorExtent;
 	}
@@ -31,35 +30,10 @@ struct FReberuDoor{
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector BoxExtent;
-
-	/** The weight of how this should be selected (should be out of 1) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Weight;
 	
 	void GenerateNewDoorId(){
 		DoorId = FGuid::NewGuid().ToString();
 	}
-};
-
-/**
- * Represents a connection from one room to another.
- * If a room has no transitions, a random room in the data asset will be picked.
- */
-USTRUCT(BlueprintType, Blueprintable)
-struct FReberuTransition{
-	GENERATED_BODY()
-
-	/** The room that the owning room should transition to. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	class UReberuRoomData* ConnectedRoom;
-
-	/** Weight represents the likelihood that this transition will be chosen. Should be between 0-1 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float Weight;
-
-	/** Rules that specify whether or not this transition can be used. No rules == good to go. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TArray<TSubclassOf<UReberuRule>> Rules;
 };
 
 /**
@@ -85,10 +59,6 @@ struct FReberuRoom{
 	/** The doors associated with this room. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FReberuDoor> ReberuDoors;
-
-	/** The rooms that we can transition to from this room. None means a random one will be chosen. */
-	UPROPERTY(EditDefaultsOnly)
-	TArray<FReberuTransition> Transitions;
 
 	/** Set containing the used doors (key is their id). Used in generation. */
 	UPROPERTY()

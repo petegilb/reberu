@@ -16,21 +16,21 @@ class REBERU_API ARoomBounds : public AActor{
 public:
 	ARoomBounds();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DoorEditor")
 	UBoxComponent* RoomBox;
 	
 	/**
 	 * Door spawner vector that will be used for a gizmo.
 	 * Referenced: https://forums.unrealengine.com/t/adding-custom-gizmos-to-actor-without-editor-extension/307597/6
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta = (MakeEditWidget = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta = (MakeEditWidget = true), Category="DoorEditor")
 	FTransform DoorSpawn;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DoorEditor", meta=(ShowOnlyInnerProperties))
 	FReberuRoom Room;
 
 	/** for use in the editor. represents the door we are currently editing. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DoorEditor")
 	FString CurrentlyEditingDoorId;
 
 	/** Creates a new door that is locked to the extent of the box */
@@ -38,7 +38,7 @@ public:
 	void CreateNewDoor();
 
 	/** Only exists to act as in input for EditDoorAtIdx and DelDoorAtIdx. Don't use for any other purpose. */
-	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category="DoorEditor")
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category="DoorEditor", meta=(DisplayPriority=0))
 	int32 EditDoorIdx = 0;
 
 	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")

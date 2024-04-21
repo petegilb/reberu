@@ -31,23 +31,23 @@ struct FReberuMove{
 		SpawnedTransform = InTransform;
 	}
 	
-	FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, ARoomBounds* InToRoomBounds, bool InCanRevertMove){
+	FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, ARoomBounds* InTargetRoomBounds, bool InCanRevertMove){
 		RoomData = InRoomData;
 		SpawnedTransform = InTransform;
-		ToRoomBounds = InToRoomBounds;
+		TargetRoomBounds = InTargetRoomBounds;
 		CanRevertMove = InCanRevertMove;
 	}
 
-	FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, ARoomBounds* InToRoomBounds, bool InCanRevertMove, ARoomBounds* InFromRoomBounds,
-		FString InFromRoomDoor, FString InToRoomDoor)
+	FReberuMove(UReberuRoomData* InRoomData, const FTransform& InTransform, ARoomBounds* InTargetRoomBounds, bool InCanRevertMove, ARoomBounds* InSourceRoomBounds,
+		FString InSourceRoomDoor, FString InTargetRoomDoor)
 	{
 		RoomData = InRoomData;
 		SpawnedTransform = InTransform;
-		ToRoomBounds = InToRoomBounds;
+		TargetRoomBounds = InTargetRoomBounds;
 		CanRevertMove = InCanRevertMove;
-		FromRoomBounds = InFromRoomBounds;
-		FromRoomDoor = InFromRoomDoor;
-		ToRoomDoor = InToRoomDoor;
+		SourceRoomBounds = InSourceRoomBounds;
+		SourceRoomDoor = InSourceRoomDoor;
+		TargetRoomDoor = InTargetRoomDoor;
 	}
 
 	/** Reference to the room data associated with this move. */
@@ -56,13 +56,13 @@ struct FReberuMove{
 	/** The world transform that the room should be spawned at. */
 	FTransform SpawnedTransform {FTransform()};
 	
-	ARoomBounds* FromRoomBounds {nullptr};
+	ARoomBounds* SourceRoomBounds {nullptr};
 
-	FString FromRoomDoor {FString()};
+	FString SourceRoomDoor {FString()};
 
-	ARoomBounds* ToRoomBounds {nullptr};
+	ARoomBounds* TargetRoomBounds {nullptr};
 
-	FString ToRoomDoor {FString()};
+	FString TargetRoomDoor {FString()};
 
 	ULevelStreamingDynamic* SpawnedLevel {nullptr};
 
@@ -96,7 +96,7 @@ public:
 	ARoomBounds* SpawnRoomBounds(const UReberuRoomData* InRoom, const FTransform& AtTransform);
 
 	/** Do logic to place next room and retry accordingly. */
-	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* FromRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>&
+	bool PlaceNextRoom(UReberuData* ReberuData, FReberuMove& NewMove, ARoomBounds* SourceRoomBounds, TSet<FString>& AttemptedNewRoomDoors, TSet<UReberuRoomData*>& AttemptedNewRooms, TSet<FString>&
 	                   AttemptedOldRoomDoors);
 
 	/** Choose the next source room if possible (or keep the current one). Only returns false on failure. Uses the inputted selection type. */

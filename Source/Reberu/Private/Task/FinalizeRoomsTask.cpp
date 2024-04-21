@@ -33,12 +33,12 @@ void FFinalizeRoomsTask::UpdateOperation(FLatentResponse& Response){
 		FTransform TempTransform = CurrentMove->GetValue().RoomData->Room.BoxActorTransform;
 		TempTransform.SetLocation(-TempTransform.GetLocation());
 		TempTransform.SetRotation(TempTransform.GetRotation().Inverse());
-		const FTransform FinalTransform = TempTransform * CurrentMove->GetValue().ToRoomBounds->GetActorTransform();
+		const FTransform FinalTransform = TempTransform * CurrentMove->GetValue().TargetRoomBounds->GetActorTransform();
 		CurrentMove->GetValue().SpawnedLevel = LevelGenerator->SpawnRoom(CurrentMove->GetValue().RoomData, FinalTransform,
 			CurrentMove->GetValue().RoomData->RoomName.ToString() + FString::FromInt(CurrentIdx));
 
 		// Delete the room bounds associated with this new level.
-		CurrentMove->GetValue().ToRoomBounds->Destroy();
+		CurrentMove->GetValue().TargetRoomBounds->Destroy();
 
 		if(CurrentMove->GetNextNode()){
 			CurrentIdx++;

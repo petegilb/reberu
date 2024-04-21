@@ -64,10 +64,10 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 		TSet<FString> AttemptedNewRoomDoors;
 		TSet<FString> AttemptedOldRoomDoors;
 		FReberuMove NewMove;
-		ARoomBounds* FromRoomBounds = SourceRoomNode->GetValue().ToRoomBounds;
+		ARoomBounds* SourceRoomBounds = SourceRoomNode->GetValue().TargetRoomBounds;
 
 		// Try placing the next room
-		const bool bRoomCreated = LevelGenerator->PlaceNextRoom(ReberuData, NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
+		const bool bRoomCreated = LevelGenerator->PlaceNextRoom(ReberuData, NewMove, SourceRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
 		AttemptedNewRooms.Empty();
 
 		if(!LevelGenerator->IsGenerating()){
@@ -78,8 +78,8 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 		// If we created a room successfully, update values accordingly
 		if(bRoomCreated){
 			MaxBacktrackTries = ReberuData->MaxBacktrackTries;
-			NewMove.FromRoomBounds->Room.UsedDoors.Add(NewMove.FromRoomDoor);
-			NewMove.ToRoomBounds->Room.UsedDoors.Add(NewMove.ToRoomDoor);
+			NewMove.SourceRoomBounds->Room.UsedDoors.Add(NewMove.SourceRoomDoor);
+			NewMove.TargetRoomBounds->Room.UsedDoors.Add(NewMove.TargetRoomDoor);
 			MovesList.AddTail(NewMove);
 			REBERU_LOG(Log, "Added new move to the list!")
 			// Choose the next source room (or keep the current one if applicable)
