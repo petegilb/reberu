@@ -42,6 +42,12 @@ void ARoomBounds::DelDoorAtIdx(){
 	Room.ReberuDoors.RemoveAt(EditDoorIdx);
 }
 
+void ARoomBounds::RegenerateDoorIds(){
+	for(FReberuDoor& Door : Room.ReberuDoors){
+		Door.GenerateNewDoorId();
+	}
+}
+
 void ARoomBounds::BeginPlay(){
 	Super::BeginPlay();
 	

@@ -51,9 +51,12 @@ public:
 	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
 	void DelDoorAtIdx();
 
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	void RegenerateDoorIds();
+
 protected:
 	virtual void BeginPlay() override;
-
+	
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	/** Clamp the door gizmo to box bounds. */

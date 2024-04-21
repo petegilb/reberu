@@ -139,12 +139,6 @@ protected:
 	/** Calculates the transform that the next room should spawn at by using their local transforms and the transforms of the doors */
 	FTransform CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor);
 
-	/**
-	 * The function that is called to generate rooms. Should only be called within StartGeneration and not outside of that!
-	 * Returns the number of rooms generated.
-	 */
-	virtual int32 GenerateRooms(UReberuData* InReberuData);
-
 public:
 	TDoubleLinkedList<FReberuMove>& GetMovesListRef(){return MovesList;}
 

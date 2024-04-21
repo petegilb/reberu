@@ -180,72 +180,6 @@ ARoomBounds* ALevelGeneratorActor::SpawnRoomBounds(const UReberuRoomData* InRoom
 	return SpawnedBounds;
 }
 
-int32 ALevelGeneratorActor::GenerateRooms(UReberuData* InReberuData){
-	UReberuData* ReberuData = InReberuData;
-	
-	REBERU_LOG_ARGS(Log, "Starting level generation with %s", *ReberuData->GetName())
-	
-	UReberuRoomData* StartingRoomData = ReberuData->StartingRoom ? ReberuData->StartingRoom : GetRandomObjectInArray<UReberuRoomData*>(ReberuData->ReberuRooms, ReberuRandomStream);
-
-	if(!StartingRoomData) return 0;
-	
-	ARoomBounds* StartingBounds = SpawnRoomBounds(StartingRoomData, FTransform::Identity);
-	MovesList.AddHead(FReberuMove(StartingRoomData, StartingBounds->GetActorTransform(), StartingBounds, false));
-
-	int32 InfiniteCount = 0;
-	
-	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* SourceRoomNode = MovesList.GetHead();
-	int32 MaxBacktrackTries = ReberuData->MaxBacktrackTries;
-	TSet<UReberuRoomData*> AttemptedNewRooms;
-	while (MovesList.Num() < ReberuData->TargetRoomAmount && bIsGenerating){
-		InfiniteCount++;
-		if(InfiniteCount >= 2500){
-			REBERU_LOG(Error, "Reached the infinite loop guard of 2500 loops, error!")
-			check(false)
-		}
-		
-		TSet<FString> AttemptedNewRoomDoors;
-		TSet<FString> AttemptedOldRoomDoors;
-		FReberuMove NewMove;
-		ARoomBounds* FromRoomBounds = SourceRoomNode->GetValue().ToRoomBounds;
-		
-		// Try placing the next room
-		const bool bRoomCreated = PlaceNextRoom(ReberuData, NewMove, FromRoomBounds, AttemptedNewRoomDoors, AttemptedNewRooms, AttemptedOldRoomDoors);
-		AttemptedNewRooms.Empty();
-		
-		if(!bIsGenerating) break;
-
-		// If we created a room successfully, update values accordingly
-		if(bRoomCreated){
-			MaxBacktrackTries = ReberuData->MaxBacktrackTries;
-			NewMove.FromRoomBounds->Room.UsedDoors.Add(NewMove.FromRoomDoor);
-			NewMove.ToRoomBounds->Room.UsedDoors.Add(NewMove.ToRoomDoor);
-			MovesList.AddTail(NewMove);
-			REBERU_LOG(Log, "Added new move to the list!")
-			// Choose the next source room (or keep the current one if applicable)
-			ChooseSourceRoom(SourceRoomNode, ReberuData->RoomSelectionMethod);
-		}
-		else{
-			REBERU_LOG(Log, "Failed to place room during reberu generation. Trying to choose next room or backtrack...")
-			// If we failed to place a room, try moving forward through the moveslist, if we're already at the tail, backtrack.
-			// if we successfully choose a new room, we're done here.
-			if(ChooseSourceRoom(SourceRoomNode, ReberuData->RoomSelectionMethod, true)) continue;
-			
-			// backtrack here if possible, otherwise we fail and restart generation
-			if(MaxBacktrackTries > 0){
-				MaxBacktrackTries--;
-				bool bBacktrackResult = BacktrackSourceRoom(SourceRoomNode, ReberuData->BacktrackMethod, AttemptedNewRooms);
-				if(!bBacktrackResult) REBERU_LOG(Warning, "We failed to backtrack, worth debugging!")
-			}
-			else{
-				bIsGenerating = false;
-			}
-		}
-	}
-	REBERU_LOG_ARGS(Log, "Reberu Generation complete! Created %d rooms!", MovesList.Num())
-	return MovesList.Num();
-}
-
 bool ALevelGeneratorActor::ChooseSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomSelection SelectionType, bool bFromError){
 	// TODO implement other selection types
 
@@ -492,7 +426,6 @@ void ALevelGeneratorActor::ClearGeneration(){
 		}
 	}
 	bIsGenerating = false;
-	// TODO reset all variables here so we can do another clean run. Should also call this in StartGeneration if we have already one one that still exists.
 	MovesList.Empty();
 }
 
