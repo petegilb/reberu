@@ -170,7 +170,8 @@ protected:
 
 	UPROPERTY()
 	bool bIsGenerating = false;
-	
+
+	/** The list of moves that are generated during reberu generation. We use a doublelinkedlist so we can easily backtrack */
 	TDoubleLinkedList<FReberuMove> MovesList;
 
 	/** Does some prechecks before generation starts to see if we can even start generation. */

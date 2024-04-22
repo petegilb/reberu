@@ -36,7 +36,7 @@ ALevelGeneratorActor::ALevelGeneratorActor(const FObjectInitializer& ObjectIniti
         FConstructorStatics()
             // Use helper class object to find the texture
             // "/Engine/EditorResources/S_Note" is resource path
-            : NoteTextureObject(TEXT("/Engine/EditorResources/S_Note"))
+            : NoteTextureObject(TEXT("/Engine/EditorResources/S_TriggerBox"))
             , ID_Notes(TEXT("Notes"))
             , NAME_Notes(NSLOCTEXT("SpriteCategory", "Notes", "Notes"))
         {
@@ -48,9 +48,7 @@ ALevelGeneratorActor::ALevelGeneratorActor(const FObjectInitializer& ObjectIniti
 	SpriteComponent = CreateEditorOnlyDefaultSubobject<UBillboardComponent>(TEXT("Sprite"));
 	if (SpriteComponent)
 	{
-		SpriteComponent->Sprite = ConstructorStatics.NoteTextureObject.Get();
-		SpriteComponent->SpriteInfo.Category = ConstructorStatics.ID_Notes;
-		SpriteComponent->SpriteInfo.DisplayName = ConstructorStatics.NAME_Notes;
+		SpriteComponent->Sprite = SpriteTexture ? SpriteTexture : ConstructorStatics.NoteTextureObject.Get();
 		SpriteComponent->Mobility = EComponentMobility::Static;
 		SpriteComponent->SetupAttachment(RootComponent);
 	}

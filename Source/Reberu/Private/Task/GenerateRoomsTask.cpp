@@ -41,6 +41,21 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 
 		REBERU_LOG_ARGS(Log, "Starting level generation with %s", *ReberuData->GetName())
 
+		/** Check for duplicate door ids just in case. */
+		TMap<FString, UReberuRoomData*> DoorToRoomMap; 
+		for(UReberuRoomData* Room : ReberuData->ReberuRooms){
+			for(const FReberuDoor& Door : Room->Room.ReberuDoors){
+				if(DoorToRoomMap.Contains(Door.DoorId)){
+					const UReberuRoomData* OldRoom = *DoorToRoomMap.Find(Door.DoorId);
+					REBERU_LOG_ARGS(Warning, "Duplicate Door Id detected in %s with id: %s (other in %s). Please regenerate ids to have unique door ids or it may cause unexpected issues.",
+						*Room->RoomName.ToString(), *Door.DoorId, *OldRoom->RoomName.ToString())
+				}
+				else{
+					DoorToRoomMap.Add(Door.DoorId, Room);
+				}
+			}
+		}
+
 		if(Seed > 0){
 			ReberuRandomStream = FRandomStream(Seed);
 		}
