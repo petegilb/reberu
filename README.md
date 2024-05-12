@@ -45,6 +45,6 @@
 
   ### Credits
 
-  <h4> Took inspiration from: <a href="https://github.com/BenPyton/ProceduralDungeon">ProceduralDungeon</a>, but the code and implementation is all original :).</h4>
+  Took inspiration from: <a href="https://github.com/BenPyton/ProceduralDungeon">ProceduralDungeon</a>, but the code and implementation is all original :).
 
 </div>
