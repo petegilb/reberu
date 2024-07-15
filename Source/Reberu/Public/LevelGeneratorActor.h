@@ -7,6 +7,7 @@
 #include "Data/ReberuRoomData.h"
 #include "GameFramework/Actor.h"
 #include "LatentActions.h"
+#include "Components/BillboardComponent.h"
 #include "LevelGeneratorActor.generated.h"
 
 class ARoomBounds;
@@ -14,6 +15,8 @@ struct FReberuDoor;
 class ULevelStreamingDynamic;
 class UReberuRoomData;
 class UReberuData;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGenerationCompleteSignature);
 
 /** Simplified version of a move that we will use when generating */
 USTRUCT()
@@ -110,6 +113,30 @@ struct FReberuMove{
 	bool CanRevertMove = true;
 };
 
+/** Struct that will be replicated when generation is complete. */
+USTRUCT()
+struct FRoomLevel{
+	GENERATED_BODY()
+
+	FRoomLevel(): InRoom(nullptr){
+	}
+
+	FRoomLevel(UReberuRoomData* InRoomData, const FTransform& InTransform, FString InLevelName){
+		InRoom = InRoomData;
+		SpawnTransform = InTransform;
+		LevelName = InLevelName;
+	}
+
+	UPROPERTY()
+	UReberuRoomData* InRoom;
+
+	UPROPERTY()
+	FTransform SpawnTransform;
+
+	UPROPERTY()
+	FString LevelName;
+};
+
 
 /**
  * Level Generator used for Reberu Level Generation! 
@@ -146,10 +173,19 @@ public:
 	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod);
 	
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
-	ULevelStreamingDynamic* SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);
+	ULevelStreamingDynamic* SpawnRoom(UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);
 
 	/** Despawn a room from the world by unloading its instance */
 	void DespawnRoom(ULevelStreamingDynamic* SpawnedRoom);
+
+	UPROPERTY(ReplicatedUsing=OnRep_SpawnedRoomLevels)
+	TArray<FRoomLevel> SpawnedRoomLevels;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** Delegates **/
+	UPROPERTY(BlueprintAssignable)
+	FOnGenerationCompleteSignature OnGenerationCompleted;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Reberu")
@@ -179,6 +215,13 @@ protected:
 
 	/** Calculates the transform that the next room should spawn at by using their local transforms and the transforms of the doors */
 	FTransform CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor);
+
+	/** Update spawned levels on the client too */
+	UFUNCTION()
+	void OnRep_SpawnedRoomLevels();
+	
+	UPROPERTY()
+	TMap<FString, ULevelStreamingDynamic*> LocalSpawnedLevels;
 
 public:
 	TDoubleLinkedList<FReberuMove>& GetMovesListRef(){return MovesList;}

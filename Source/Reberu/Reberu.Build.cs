@@ -26,7 +26,7 @@ public class Reberu : ModuleRules
 			new string[]
 			{
 				"Core",
-				"DeveloperSettings"
+				"DeveloperSettings", "Engine"
 			}
 			);
 			

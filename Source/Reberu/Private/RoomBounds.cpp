@@ -53,6 +53,7 @@ void ARoomBounds::BeginPlay(){
 	
 }
 
+#if WITH_EDITOR
 void ARoomBounds::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent){
 
 	//Get the name of the property that was changed  
@@ -67,6 +68,7 @@ void ARoomBounds::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif
 
 void ARoomBounds::LockDoorGizmo(){
 	const FBox Box = FBox( -RoomBox->GetScaledBoxExtent(), RoomBox->GetScaledBoxExtent() );

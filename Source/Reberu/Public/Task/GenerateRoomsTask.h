@@ -32,6 +32,8 @@ public:
 	bool bWantToCancel = false;
 	bool bIsCompleted = false;
 	int32 Seed = -1;
+	
+	FTransform StartRoomTransform = FTransform::Identity;
 
 	// Debug delay vars
 	bool bDebugDelay = false;
@@ -51,10 +53,11 @@ public:
 	EGenerateRoomsOutputPins& Output;
 
 	FGenerateRoomsAction(ALevelGeneratorActor* LevelGenerator, UReberuData* ReberuData, int32& OutGeneratedRooms,
-		bool& bOutSuccess, const FLatentActionInfo& LatentActionInfo, EGenerateRoomsOutputPins& OutputPins, const int32 Seed, const bool bDebugDelay=false)
+		bool& bOutSuccess, const FLatentActionInfo& LatentActionInfo, EGenerateRoomsOutputPins& OutputPins, const int32 Seed, const bool bDebugDelay=false, FTransform StartRoomTransform = FTransform::Identity)
 		: LevelGenerator(LevelGenerator),
 		  ReberuData(ReberuData),
 		  Seed(Seed),
+		  StartRoomTransform(StartRoomTransform),
 		  bDebugDelay(bDebugDelay),
 		  MovesList(LevelGenerator->GetMovesListRef()),
 		  ReberuRandomStream(LevelGenerator->GetReberuRandomStream()),

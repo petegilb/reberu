@@ -57,8 +57,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
+#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-
+#endif
+	
 	/** Clamp the door gizmo to box bounds. */
 	void LockDoorGizmo();
 

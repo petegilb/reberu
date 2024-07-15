@@ -35,7 +35,7 @@ void FFinalizeRoomsTask::UpdateOperation(FLatentResponse& Response){
 		TempTransform.SetRotation(TempTransform.GetRotation().Inverse());
 		const FTransform FinalTransform = TempTransform * CurrentMove->GetValue().TargetRoomBounds->GetActorTransform();
 		CurrentMove->GetValue().SpawnedLevel = LevelGenerator->SpawnRoom(CurrentMove->GetValue().RoomData, FinalTransform,
-			CurrentMove->GetValue().RoomData->RoomName.ToString() + FString::FromInt(CurrentIdx));
+		                                                                 CurrentMove->GetValue().RoomData->RoomName.ToString() + FString::FromInt(CurrentIdx));
 
 		// Delete the room bounds associated with this new level.
 		CurrentMove->GetValue().TargetRoomBounds->Destroy();
@@ -58,6 +58,7 @@ void FFinalizeRoomsTask::UpdateOperation(FLatentResponse& Response){
 	if(bIsCompleted){
 		REBERU_LOG_ARGS(Log, "Reberu Level Placement complete! Created %d levels!", MovesList.Num())
 		Output = EFinalizeRoomsOutputPins::OnCompleted;
+		LevelGenerator->OnGenerationCompleted.Broadcast();
 		Response.FinishAndTriggerIf(true, LatentActionInfo.ExecutionFunction, LatentActionInfo.Linkage, LatentActionInfo.CallbackTarget);
 	}
 }

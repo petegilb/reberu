@@ -65,7 +65,7 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 
 		UReberuRoomData* StartingRoomData = ReberuData->StartingRoom ? ReberuData->StartingRoom : GetRandomObjectInArray<UReberuRoomData*>(ReberuData->ReberuRooms, ReberuRandomStream);
 	
-		ARoomBounds* StartingBounds = LevelGenerator->SpawnRoomBounds(StartingRoomData, FTransform::Identity);
+		ARoomBounds* StartingBounds = LevelGenerator->SpawnRoomBounds(StartingRoomData, StartRoomTransform);
 		MovesList.AddHead(FReberuMove(StartingRoomData, StartingBounds->GetActorTransform(), StartingBounds, false));
 		SourceRoomNode = MovesList.GetHead();
 		

@@ -10,7 +10,9 @@
 #include "Data/ReberuData.h"
 #include "Data/ReberuRoomData.h"
 #include "Engine/LevelStreamingDynamic.h"
+#include "Engine/OverlapResult.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 ALevelGeneratorActor::ALevelGeneratorActor(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -20,6 +22,8 @@ ALevelGeneratorActor::ALevelGeneratorActor(const FObjectInitializer& ObjectIniti
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SceneComponent->SetMobility(EComponentMobility::Static);
 	SetRootComponent(SceneComponent);
+
+	bReplicates = true;
 
 	// Structure to hold one-time initialization
     struct FConstructorStatics
@@ -82,20 +86,34 @@ bool ALevelGeneratorActor::CanStartGeneration() const{
 	return true;
 }
 
-ULevelStreamingDynamic* ALevelGeneratorActor::SpawnRoom(const UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName){
+ULevelStreamingDynamic* ALevelGeneratorActor::SpawnRoom(UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName){
 	if(!GetWorld() || !InRoom) return nullptr;
 
 	bool bSpawnedSuccessfully = false;
+
+	// Check if there is already a level with this name:
+	if (LocalSpawnedLevels.Contains(LevelName)) {return nullptr;}
+	
 	ULevelStreamingDynamic* SpawnedRoom = ULevelStreamingDynamic::LoadLevelInstanceBySoftObjectPtr(this, InRoom->Room.Level, SpawnTransform,
 		bSpawnedSuccessfully, LevelName);
 
-	if(!bSpawnedSuccessfully) REBERU_LOG_ARGS(Warning, "SpawnRoom failed spawning room with name %s", InRoom->RoomName)
+	if(!bSpawnedSuccessfully) REBERU_LOG_ARGS(Warning, "SpawnRoom failed spawning room with name %s %d", *InRoom->RoomName.ToString(), HasAuthority())
+
+	if(HasAuthority()){
+		SpawnedRoomLevels.Add(FRoomLevel(InRoom, SpawnTransform, LevelName));
+	}
 	
 	return SpawnedRoom;
 }
 
 void ALevelGeneratorActor::DespawnRoom(ULevelStreamingDynamic* SpawnedRoom){
 	SpawnedRoom->SetIsRequestingUnloadAndRemoval(true);
+}
+
+void ALevelGeneratorActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ALevelGeneratorActor, SpawnedRoomLevels);
 }
 
 FTransform ALevelGeneratorActor::CalculateTransformFromDoor(ARoomBounds* SourceRoomBounds, FReberuDoor SourceRoomChosenDoor, UReberuRoomData* TargetRoom, FReberuDoor TargetRoomChosenDoor){
@@ -368,9 +386,30 @@ void ALevelGeneratorActor::ClearGeneration(){
 	}
 	bIsGenerating = false;
 	MovesList.Empty();
+	SpawnedRoomLevels.Empty();
 }
 
+void ALevelGeneratorActor::OnRep_SpawnedRoomLevels(){
+	if(HasAuthority()) return;
 
+	TSet<FString> LevelNames;
+
+	// Add new ones
+	for (auto& [InRoom, SpawnTransform, LevelName] : SpawnedRoomLevels){
+		LevelNames.Add(LevelName);
+		
+		if(ULevelStreamingDynamic* NewRoom = SpawnRoom(InRoom, SpawnTransform, LevelName)){
+			LocalSpawnedLevels.Add(LevelName, NewRoom);
+		}
+	}
+	
+	// Clear previous levels
+	for (TTuple<FString, ULevelStreamingDynamic*> Level : LocalSpawnedLevels){
+		if(!LevelNames.Contains(Level.Key)){
+			Level.Value->SetIsRequestingUnloadAndRemoval(true);
+		}
+	}
+}
 
 
 
