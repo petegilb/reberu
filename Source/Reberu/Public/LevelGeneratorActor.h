@@ -171,6 +171,15 @@ public:
 
 	/** Backtrack by moving back on the moveslist. Method type can be specified and overridden. We assume we have at least 2 rooms so we can actually backtrack. */
 	virtual bool BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode*& SourceRoomNode, ERoomBacktrack BacktrackMethod);
+
+	/** Choose the target room possibilities to connect to the source room. Meant to be easily overridable. */
+	virtual void ChooseTargetRoom(TArray<UReberuRoomData*>& TargetRoomChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuMove& NewMove);
+
+	/** Limit the possibilities of the source doors. Starts with all possibilities that are unused already. */
+	virtual void ChooseSourceDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove);
+
+	/** Limit the possibilities of the target doors. Is called on each possible source door / target room that is chosen in ChooseSourceDoor / ChooseTargetRoom */
+	virtual void ChooseTargetDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuDoor& SourceDoor, UReberuRoomData* TargetRoom);
 	
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);

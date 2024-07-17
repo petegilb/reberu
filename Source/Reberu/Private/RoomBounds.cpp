@@ -60,9 +60,11 @@ void ARoomBounds::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 	const FName PropertyName = (PropertyChangedEvent.Property != nullptr) ? PropertyChangedEvent.Property->GetFName() : NAME_None;  
 
 	//Check if it's the property we want  
-	if ((PropertyName == GET_MEMBER_NAME_CHECKED(ARoomBounds, DoorSpawn)))  
-	{  
-		LockDoorGizmo();
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ARoomBounds, DoorSpawn))  
+	{
+		if(LockGizmoToBounds){
+			LockDoorGizmo();
+		}
 		ManageDoor();
 	}
 

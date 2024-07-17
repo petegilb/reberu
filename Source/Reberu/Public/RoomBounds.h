@@ -34,24 +34,27 @@ public:
 	FString CurrentlyEditingDoorId;
 
 	/** Creates a new door that is locked to the extent of the box */
-	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor", meta=(DisplayPriority=0))
 	void CreateNewDoor();
-
+	
 	/** Only exists to act as in input for EditDoorAtIdx and DelDoorAtIdx. Don't use for any other purpose. */
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category="DoorEditor", meta=(DisplayPriority=0))
 	int32 EditDoorIdx = 0;
 
-	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category="DoorEditor", meta=(DisplayPriority=1))
+	bool LockGizmoToBounds = true;
+
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor", meta=(DisplayPriority=1))
 	void EditDoorAtIdx();
 
 	/** Stop editing current door and reset gizmo position. */
-	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor", meta=(DisplayPriority=2))
 	void StopEditingDoor();
 	
-	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor", meta=(DisplayPriority=3))
 	void DelDoorAtIdx();
 
-	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category="DoorEditor", meta=(DisplayPriority=4))
 	void RegenerateDoorIds();
 
 protected:

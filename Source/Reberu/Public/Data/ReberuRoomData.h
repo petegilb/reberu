@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Engine/DataAsset.h"
 #include "Settings/ReberuSettings.h"
 #include "ReberuRoomData.generated.h"
@@ -20,6 +21,7 @@ struct FReberuDoor{
 		GenerateNewDoorId();
 		const UReberuSettings* ReberuSettings = GetDefault<UReberuSettings>();
 		BoxExtent = ReberuSettings->DefaultDoorExtent;
+		DoorTag = FGameplayTag::EmptyTag;
 	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -30,6 +32,13 @@ struct FReberuDoor{
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector BoxExtent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag DoorTag;
+
+	/** bool specifying if this door can only connect to doors of the same type. empty tags won't be limited */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bOnlyConnectSameDoor = true;
 	
 	void GenerateNewDoorId(){
 		DoorId = FGuid::NewGuid().ToString();
@@ -63,6 +72,14 @@ struct FReberuRoom{
 	/** Set containing the used doors (key is their id). Used in generation. */
 	UPROPERTY()
 	TSet<FString> UsedDoors;
+
+	/** Tags associated with this room. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTagContainer RoomTags;
+
+	/** bool specifying if room type should be allowed to connect to its same type of room */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bAllowSameRoomConnect = false;
 
 	FReberuDoor* GetDoorById(FString InId){
 		FReberuDoor* CurrentDoor = ReberuDoors.FindByPredicate([InId](const FReberuDoor& InItem)

@@ -264,15 +264,22 @@ bool ALevelGeneratorActor::BacktrackSourceRoom(TDoubleLinkedList<FReberuMove>::T
 	return false;
 }
 
+void ALevelGeneratorActor::ChooseTargetRoom(TArray<UReberuRoomData*>& TargetRoomChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuMove& NewMove){
+}
+
+void ALevelGeneratorActor::ChooseSourceDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove){
+}
+
+void ALevelGeneratorActor::ChooseTargetDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuDoor& SourceDoor,
+	UReberuRoomData* TargetRoom){
+}
+
 bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& SourceMove, FReberuMove& NewMove){
 	REBERU_LOG(Log, "Trying to place next room...")
 
 	NewMove.SourceRoomBounds = SourceMove.TargetRoomBounds;
 
 	// Get all choices for everything. Could definitely make this more efficient.
-	// TODO can limit this more based on what rooms are possible to transition to from this one.
-	TArray<UReberuRoomData*> TargetRoomChoices;
-	TargetRoomChoices += ReberuData->ReberuRooms;
 
 	// Get source room possible doors (remove the already used doors)
 	TArray<FReberuDoor> SourceRoomDoorChoices;
@@ -281,17 +288,38 @@ bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& S
 			SourceRoomDoorChoices.Add(Door);
 		}
 	}
+	ChooseSourceDoor(SourceRoomDoorChoices, ReberuData, SourceMove);
 
+	// get target room possibilities
+	TArray<UReberuRoomData*> TargetRoomChoices;
+	for(UReberuRoomData* TargetRoom : ReberuData->ReberuRooms){
+		if(SourceMove.RoomData->Room.bAllowSameRoomConnect == false && SourceMove.RoomData == TargetRoom){
+			continue;
+		}
+		TargetRoomChoices.Add(TargetRoom);
+	}
+	ChooseTargetRoom(TargetRoomChoices, ReberuData, SourceMove, NewMove);
+	
 	TArray<FAttemptedMove> PossibleMoves;
 	
 	// Generate possible moves and then delete them based on the already created attempted moves...
 	// TODO get rid of the nested loop bc this is pretty gross. O(n^3)
 	for(FReberuDoor SourceDoor : SourceRoomDoorChoices){
 		for(UReberuRoomData* TargetRoom : TargetRoomChoices){
-			for(FReberuDoor TargetDoor : TargetRoom->Room.ReberuDoors){
+			TArray<FReberuDoor> TargetRoomDoorChoices = TargetRoom->Room.ReberuDoors;
+			ChooseTargetDoor(TargetRoomDoorChoices, ReberuData, SourceMove, SourceDoor, TargetRoom);
+			
+			for(FReberuDoor TargetDoor : TargetRoomDoorChoices){
 				FAttemptedMove PossibleMove = FAttemptedMove(TargetRoom, SourceDoor.DoorId, TargetDoor.DoorId);
 				if(!SourceMove.AttemptedMoves.Contains(PossibleMove)){
-					PossibleMoves.Add(PossibleMove);
+					if(SourceDoor.bOnlyConnectSameDoor || TargetDoor.bOnlyConnectSameDoor){
+						if(SourceDoor.DoorTag.MatchesTagExact(TargetDoor.DoorTag) || (SourceDoor.DoorTag.IsValid() == false && TargetDoor.DoorTag.IsValid() == false)){
+							PossibleMoves.Add(PossibleMove);
+						}
+					}
+					else{
+						PossibleMoves.Add(PossibleMove);
+					}
 				}
 			}
 		}

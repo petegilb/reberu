@@ -38,6 +38,7 @@ public class Reberu : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"GameplayTags"
 			}
 			);
 	}

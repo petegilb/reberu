@@ -28,7 +28,8 @@ public class ReberuEditor : ModuleRules
                 "UMG",
                 "UMGEditor",
                 "Blutility",
-                "Reberu"
+                "Reberu",
+                "GameplayTags"
             }
         );
     }

@@ -26,7 +26,7 @@ void FDoorComponentVisualizer::DrawVisualization(const UActorComponent* Componen
 	}
 	else if (const FReberuDoor* CurrentDoor = RoomBounds->Room.GetDoorById(RoomBounds->CurrentlyEditingDoorId)){
 		CurrentDoorIdx = RoomBounds->Room.GetDoorIdxById(RoomBounds->CurrentlyEditingDoorId);
-		DrawDoor(View, PDI, DoorSpawnWorldTransform, CurrentDoor->BoxExtent, CurrentDoorIdx, CurrentDoor->DoorId, FLinearColor::Yellow, FLinearColor::Red);
+		DrawDoor(View, PDI, DoorSpawnWorldTransform, CurrentDoor->BoxExtent, CurrentDoorIdx, CurrentDoor->DoorId, FLinearColor::Yellow, FLinearColor::Red, CurrentDoor->DoorTag);
 	}
 
 	// Display all other doors
@@ -34,14 +34,14 @@ void FDoorComponentVisualizer::DrawVisualization(const UActorComponent* Componen
 	int32 DoorIdx = 0;
 	for (FReberuDoor Door : DoorsToDraw){
 		if(CurrentDoorIdx == INDEX_NONE || DoorIdx != CurrentDoorIdx){
-			DrawDoor(View, PDI, Door.DoorTransform * RoomBoundsTransform, Door.BoxExtent, DoorIdx, Door.DoorId, FLinearColor::Green, FLinearColor::Red);
+			DrawDoor(View, PDI, Door.DoorTransform * RoomBoundsTransform, Door.BoxExtent, DoorIdx, Door.DoorId, FLinearColor::Green, FLinearColor::Red, Door.DoorTag);
 		}
 		DoorIdx++;
 	}
 }
 
 void FDoorComponentVisualizer::DrawDoor(const FSceneView* View, FPrimitiveDrawInterface* PDI, const FTransform& DoorWorldTransform, const FVector& DoorExtent,
-	const int32 DoorIndex, const FString& DoorId, const FLinearColor Color, FLinearColor TextColor)
+	const int32 DoorIndex, const FString& DoorId, const FLinearColor Color, FLinearColor TextColor, FGameplayTag DoorTag)
 {
 	const FMatrix Matrix = DoorWorldTransform.ToMatrixWithScale();
 
@@ -53,6 +53,7 @@ void FDoorComponentVisualizer::DrawDoor(const FSceneView* View, FPrimitiveDrawIn
 	FString WorldString = TEXT("Door Idx: ");
 	WorldString += FString::FromInt(DoorIndex);
 	WorldString += FString::Printf(TEXT("\n %s"), *DoorId);
+	WorldString += FString::Printf(TEXT("\n %s"), *DoorTag.ToString());
 	DrawWorldText(DoorWorldTransform.GetLocation() + FVector(0.f, 0.f, 40.f), View, WorldString, TextColor);
 }
 

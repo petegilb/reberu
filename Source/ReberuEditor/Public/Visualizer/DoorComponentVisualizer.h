@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ComponentVisualizer.h"
+#include "GameplayTagContainer.h"
 
 /**
  * Component visualizer to see the representation of a door in the scene.
@@ -22,7 +23,7 @@ public:
 
 	/** Helper function for drawing a Door */
 	static void DrawDoor(const FSceneView* View, FPrimitiveDrawInterface* PDI, const FTransform& DoorWorldTransform, const FVector& DoorExtent, const int32 DoorIndex,
-	                     const FString& DoorId, const FLinearColor Color, FLinearColor TextColor);
+	                     const FString& DoorId, const FLinearColor Color, FLinearColor TextColor, FGameplayTag DoorTag);
 
 	/** Helper function for drawing text in world space */
 	static void DrawWorldText(const FVector& InWorldLocation, const FSceneView* InView, const FString& InString, FLinearColor Color);
