@@ -110,6 +110,59 @@ void ALevelGeneratorActor::DespawnRoom(ULevelStreamingDynamic* SpawnedRoom){
 	SpawnedRoom->SetIsRequestingUnloadAndRemoval(true);
 }
 
+AActor* ALevelGeneratorActor::SpawnDoor(UReberuData* ReberuData, ARoomBounds* TargetRoomBounds, FString DoorId, bool bIsOrphaned){
+	if(DoorId.IsEmpty()) return nullptr;
+	
+	FReberuDoor ReberuDoor = *TargetRoomBounds->Room.GetDoorById(DoorId);
+	if(!HasAuthority()) return nullptr;
+
+	UWorld* World = GetWorld();
+	if (!World) return nullptr;
+
+	FTransform LastRoomTransform = TargetRoomBounds->GetActorTransform();
+	FVector RotatedFromDoorExtent = UKismetMathLibrary::Quat_RotateVector(
+		ReberuDoor.DoorTransform.GetRotation(),
+		FVector(ReberuDoor.BoxExtent.X, 0.f, -ReberuDoor.BoxExtent.Z));
+	ReberuDoor.DoorTransform.SetLocation(ReberuDoor.DoorTransform.GetLocation() + RotatedFromDoorExtent);
+	FTransform LastRoomDoorTransform = ReberuDoor.DoorTransform * LastRoomTransform;
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+
+	FReberuDoorInfo* DoorInfo = nullptr;
+	if (ReberuDoor.DoorTag.IsValid()){
+		DoorInfo = ReberuData->DoorMap.Find(ReberuDoor.DoorTag);
+	}
+	else if (ReberuData->DoorMap.Contains(ReberuEmptyDoorTag)){
+		DoorInfo = ReberuData->DoorMap.Find(ReberuEmptyDoorTag);
+	}
+	else{
+		return nullptr;
+	}
+
+	if(!DoorInfo){
+		REBERU_LOG_ARGS(Warning, "No door found in door map with the tag: %s", *ReberuDoor.DoorTag.ToString())
+		return nullptr;
+	}
+
+	if(!bIsOrphaned && !DoorInfo->DoorActor->IsValidLowLevel()){
+		REBERU_LOG_ARGS(Warning, "No door actor found in door map with the tag: %s", *ReberuDoor.DoorTag.ToString())
+		return nullptr;
+	}
+
+	if(bIsOrphaned && !DoorInfo->BlockedDoorActor->IsValidLowLevel()){
+		REBERU_LOG_ARGS(Warning, "No blocked door found in door map with the tag: %s", *ReberuDoor.DoorTag.ToString())
+		return nullptr;
+	}
+
+	TSubclassOf<AActor> DoorActorClass = bIsOrphaned ? DoorInfo->BlockedDoorActor : DoorInfo->DoorActor;
+	
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AActor* SpawnedDoor = World->SpawnActor<AActor>(DoorActorClass, LastRoomDoorTransform, SpawnParams);
+
+	return SpawnedDoor;
+}
+
 void ALevelGeneratorActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const{
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -272,6 +325,10 @@ void ALevelGeneratorActor::ChooseSourceDoor(TArray<FReberuDoor>& SourceRoomDoorC
 
 void ALevelGeneratorActor::ChooseTargetDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuDoor& SourceDoor,
 	UReberuRoomData* TargetRoom){
+}
+
+void ALevelGeneratorActor::PostProcessing(UReberuData* ReberuData){
+	K2_PostProcessing(ReberuData);
 }
 
 bool ALevelGeneratorActor::PlaceNextRoom(UReberuData* ReberuData, FReberuMove& SourceMove, FReberuMove& NewMove){

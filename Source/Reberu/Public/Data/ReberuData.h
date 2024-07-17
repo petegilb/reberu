@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Engine/DataAsset.h"
 #include "ReberuData.generated.h"
 
@@ -28,6 +29,19 @@ enum class ERoomBacktrack : uint8 {
 	Custom2,
 	Custom3,
 	Custom4,
+};
+
+USTRUCT(Blueprintable, BlueprintType)
+struct FReberuDoorInfo{
+	GENERATED_BODY()
+
+	/** */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSubclassOf<AActor> DoorActor;
+
+	/** */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSubclassOf<AActor> BlockedDoorActor;
 };
 
 /**
@@ -64,4 +78,8 @@ public:
 	/** The method to backtrack upon failure. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	ERoomBacktrack BacktrackMethod = ERoomBacktrack::FromTail;
+
+	/** Map to specify door related info mapped to a tag. Add to Reberu.Door.Empty for non tagged doors */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TMap<FGameplayTag, FReberuDoorInfo> DoorMap;
 };

@@ -31,6 +31,7 @@ public:
 	bool bWantToCancel = false; 
 	bool bIsCompleted = false;
 	int32 CurrentIdx = 0;
+	UReberuData* ReberuData = nullptr;
 
 	TDoubleLinkedList<FReberuMove>::TDoubleLinkedListNode* CurrentMove = nullptr;
 
@@ -42,8 +43,9 @@ public:
 	EFinalizeRoomsOutputPins& Output;
 	
 	// Constructor
-	FFinalizeRoomsTask(ALevelGeneratorActor* LevelGenerator, bool& bSuccess, const FLatentActionInfo& LatentActionInfo, EFinalizeRoomsOutputPins& Output)
+	FFinalizeRoomsTask(ALevelGeneratorActor* LevelGenerator, UReberuData* ReberuData, bool& bSuccess, const FLatentActionInfo& LatentActionInfo, EFinalizeRoomsOutputPins& Output)
 		: LevelGenerator(LevelGenerator),
+		  ReberuData(ReberuData),
 		  MovesList(LevelGenerator->GetMovesListRef()),
 		  bSuccess(bSuccess),
 		  LatentActionInfo(LatentActionInfo),

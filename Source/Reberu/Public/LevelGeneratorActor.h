@@ -111,6 +111,12 @@ struct FReberuMove{
 
 	/** Specifies whether this move can be reverted during generation. */
 	bool CanRevertMove = true;
+
+	/** Door actor associated with this move */
+	AActor* SpawnedDoor {nullptr};
+
+	/** Blocked door actors associated with this move */
+	TArray<AActor*> SpawnedBlockedDoors;
 };
 
 /** Struct that will be replicated when generation is complete. */
@@ -180,12 +186,21 @@ public:
 
 	/** Limit the possibilities of the target doors. Is called on each possible source door / target room that is chosen in ChooseSourceDoor / ChooseTargetRoom */
 	virtual void ChooseTargetDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuDoor& SourceDoor, UReberuRoomData* TargetRoom);
+
+	/** Overridable function that gets called when the finalize task is complete so the user can customize some post processing */
+	virtual void PostProcessing(UReberuData* ReberuData);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void K2_PostProcessing(UReberuData* ReberuData);
 	
 	/** Spawn a room into the world by loading a level instance at the designated loc/rot. */
 	ULevelStreamingDynamic* SpawnRoom(UReberuRoomData* InRoom, const FTransform& SpawnTransform, FString LevelName);
 
 	/** Despawn a room from the world by unloading its instance */
 	void DespawnRoom(ULevelStreamingDynamic* SpawnedRoom);
+
+	/** Spawns the door based off the target door's tag */
+	AActor* SpawnDoor(UReberuData* ReberuData, ARoomBounds* TargetRoomBounds, FString DoorId, bool bIsOrphaned = false);
 
 	UPROPERTY(ReplicatedUsing=OnRep_SpawnedRoomLevels)
 	TArray<FRoomLevel> SpawnedRoomLevels;
@@ -223,7 +238,7 @@ protected:
 	virtual bool CanStartGeneration() const;
 
 	/** Calculates the transform that the next room should spawn at by using their local transforms and the transforms of the doors */
-	FTransform CalculateTransformFromDoor(ARoomBounds* CurrentRoomBounds, FReberuDoor CurrentRoomChosenDoor, UReberuRoomData* NextRoom, FReberuDoor NextRoomChosenDoor);
+	FTransform CalculateTransformFromDoor(ARoomBounds* SourceRoomBounds, FReberuDoor SourceRoomChosenDoor, UReberuRoomData* TargetRoom, FReberuDoor TargetRoomChosenDoor);
 
 	/** Update spawned levels on the client too */
 	UFUNCTION()

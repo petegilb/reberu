@@ -5,6 +5,7 @@
 #define LOCTEXT_NAMESPACE "FReberuModule"
 
 DEFINE_LOG_CATEGORY(LogReberu);
+UE_DEFINE_GAMEPLAY_TAG(ReberuEmptyDoorTag, "Reberu.Door.Empty")
 
 void FReberuModule::StartupModule()
 {

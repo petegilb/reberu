@@ -42,7 +42,7 @@ void UReberuLibrary::GenerateRooms(UObject* WorldContext, FLatentActionInfo Late
 	}
 }
 
-void UReberuLibrary::FinalizeRooms(UObject* WorldContext, FLatentActionInfo LatentInfo, EFinalizeRoomsInputPins InputPins, EFinalizeRoomsOutputPins& OutputPins,
+void UReberuLibrary::FinalizeRooms(UObject* WorldContext, UReberuData* ReberuData, FLatentActionInfo LatentInfo, EFinalizeRoomsInputPins InputPins, EFinalizeRoomsOutputPins& OutputPins,
 	ALevelGeneratorActor* LevelGenerator, bool& bOutSuccess){
 
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull);
@@ -61,7 +61,7 @@ void UReberuLibrary::FinalizeRooms(UObject* WorldContext, FLatentActionInfo Late
 	if (InputPins == EFinalizeRoomsInputPins::Start){
 		if(!ExistingAction){
 			// ALevelGeneratorActor* LevelGenerator, bool& bSuccess, const FLatentActionInfo& LatentActionInfo, EReberuTaskOutputPins& Output
-			FFinalizeRoomsTask* NewAction = new FFinalizeRoomsTask(LevelGenerator, bOutSuccess, LatentInfo, OutputPins);
+			FFinalizeRoomsTask* NewAction = new FFinalizeRoomsTask(LevelGenerator, ReberuData, bOutSuccess, LatentInfo, OutputPins);
 			LatentActionManager.AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID, NewAction);
 		}
 	}

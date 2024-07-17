@@ -37,6 +37,17 @@ void FFinalizeRoomsTask::UpdateOperation(FLatentResponse& Response){
 		CurrentMove->GetValue().SpawnedLevel = LevelGenerator->SpawnRoom(CurrentMove->GetValue().RoomData, FinalTransform,
 		                                                                 CurrentMove->GetValue().RoomData->RoomName.ToString() + FString::FromInt(CurrentIdx));
 
+		// Spawn the door
+		CurrentMove->GetValue().SpawnedDoor = LevelGenerator->SpawnDoor(ReberuData, CurrentMove->GetValue().TargetRoomBounds, CurrentMove->GetValue().TargetRoomDoor);
+
+		// Spawn any blocked doors
+		const TSet<FString> RoomUsedDoors = CurrentMove->GetValue().TargetRoomBounds->Room.UsedDoors;
+		for (auto Door : CurrentMove->GetValue().TargetRoomBounds->Room.ReberuDoors){
+			if(!RoomUsedDoors.Contains(Door.DoorId)){
+				CurrentMove->GetValue().SpawnedBlockedDoors.Add(LevelGenerator->SpawnDoor(ReberuData, CurrentMove->GetValue().TargetRoomBounds, Door.DoorId, true));
+			}
+		}
+
 		// Delete the room bounds associated with this new level.
 		CurrentMove->GetValue().TargetRoomBounds->Destroy();
 
@@ -58,6 +69,7 @@ void FFinalizeRoomsTask::UpdateOperation(FLatentResponse& Response){
 	if(bIsCompleted){
 		REBERU_LOG_ARGS(Log, "Reberu Level Placement complete! Created %d levels!", MovesList.Num())
 		Output = EFinalizeRoomsOutputPins::OnCompleted;
+		LevelGenerator->PostProcessing(ReberuData);
 		LevelGenerator->OnGenerationCompleted.Broadcast();
 		Response.FinishAndTriggerIf(true, LatentActionInfo.ExecutionFunction, LatentActionInfo.Linkage, LatentActionInfo.CallbackTarget);
 	}
