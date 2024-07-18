@@ -45,6 +45,11 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 		TMap<FString, UReberuRoomData*> DoorToRoomMap; 
 		for(UReberuRoomData* Room : ReberuData->ReberuRooms){
 			for(const FReberuDoor& Door : Room->Room.ReberuDoors){
+
+				if(Door.DoorTransform.GetScale3D() != FVector::One()){
+					REBERU_LOG_ARGS(Error, "Detected door %s on room %s with scale != 1 in their transform. Will cause door visual to look off.", *Room->RoomName.ToString(), *Door.DoorId)
+				}
+				
 				if(DoorToRoomMap.Contains(Door.DoorId)){
 					const UReberuRoomData* OldRoom = *DoorToRoomMap.Find(Door.DoorId);
 					REBERU_LOG_ARGS(Warning, "Duplicate Door Id detected in %s with id: %s (other in %s). Please regenerate ids to have unique door ids or it may cause unexpected issues.",
