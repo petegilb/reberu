@@ -91,7 +91,10 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 			MaxBacktrackTries = ReberuData->MaxBacktrackTries;
 			NewMove.SourceRoomBounds->Room.UsedDoors.Add(NewMove.SourceRoomDoor);
 			NewMove.TargetRoomBounds->Room.UsedDoors.Add(NewMove.TargetRoomDoor);
+			// for bfs/dfs i think this should work since we are going in order but it won't for custom methods
+			NewMove.TargetRoomBounds->Room.Depth = NewMove.SourceRoomBounds->Room.Depth + 1; 
 			MovesList.AddTail(NewMove);
+			
 			REBERU_LOG(Log, "Added new move to the list!")
 			// Choose the next source room (or keep the current one if applicable)
 			LevelGenerator->ChooseSourceRoom(SourceRoomNode, ReberuData->RoomSelectionMethod);
@@ -128,6 +131,12 @@ void FGenerateRoomsAction::UpdateOperation(FLatentResponse& Response){
 	// Do OnCompleted here!
 	if(bIsCompleted){
 		REBERU_LOG_ARGS(Log, "Reberu Generation complete! Created %d rooms!", MovesList.Num())
+		const bool PreProcessingResult = LevelGenerator->PreProcessing(ReberuData);
+		if (!PreProcessingResult){
+			Output = EGenerateRoomsOutputPins::OnFailed;
+			Response.FinishAndTriggerIf(true, LatentActionInfo.ExecutionFunction, LatentActionInfo.Linkage, LatentActionInfo.CallbackTarget);
+			return;
+		}
 		Output = EGenerateRoomsOutputPins::OnCompleted;
 		Response.FinishAndTriggerIf(true, LatentActionInfo.ExecutionFunction, LatentActionInfo.Linkage, LatentActionInfo.CallbackTarget);
 	}

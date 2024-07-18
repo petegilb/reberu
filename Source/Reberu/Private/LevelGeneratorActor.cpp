@@ -327,6 +327,10 @@ void ALevelGeneratorActor::ChooseTargetDoor(TArray<FReberuDoor>& SourceRoomDoorC
 	UReberuRoomData* TargetRoom){
 }
 
+bool ALevelGeneratorActor::PreProcessing(UReberuData* ReberuData){
+	return true;
+}
+
 void ALevelGeneratorActor::PostProcessing(UReberuData* ReberuData){
 	K2_PostProcessing(ReberuData);
 }

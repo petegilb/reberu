@@ -81,6 +81,10 @@ struct FReberuRoom{
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bAllowSameRoomConnect = false;
 
+	/** Depth of the node from the head */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Depth = 0; 
+
 	FReberuDoor* GetDoorById(FString InId){
 		FReberuDoor* CurrentDoor = ReberuDoors.FindByPredicate([InId](const FReberuDoor& InItem)
 		{

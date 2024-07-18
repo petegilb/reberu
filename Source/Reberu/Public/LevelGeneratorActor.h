@@ -186,7 +186,10 @@ public:
 
 	/** Limit the possibilities of the target doors. Is called on each possible source door / target room that is chosen in ChooseSourceDoor / ChooseTargetRoom */
 	virtual void ChooseTargetDoor(TArray<FReberuDoor>& SourceRoomDoorChoices, UReberuData* ReberuData, FReberuMove& SourceMove, FReberuDoor& SourceDoor, UReberuRoomData* TargetRoom);
-
+	
+	/** Overridable function that gets called when the generate rooms task is complete so the user can customize some pre processing */
+	virtual bool PreProcessing(UReberuData* ReberuData);
+	
 	/** Overridable function that gets called when the finalize task is complete so the user can customize some post processing */
 	virtual void PostProcessing(UReberuData* ReberuData);
 
