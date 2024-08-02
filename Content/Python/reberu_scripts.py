@@ -35,7 +35,7 @@ def create_room_data(room_bounds : unreal.RoomBounds, room_name):
     new_da.room.box_extent = room_bounds.room_box.box_extent
     new_da.room.box_actor_transform = room_bounds.get_actor_transform()
     new_da.room.level = room_bounds.get_world()
-    EAL.save_loaded_asset(new_da)
+    EAL.save_loaded_asset(new_da, False)
     ELL.destroy_actor(room_bounds)
     return True
     
